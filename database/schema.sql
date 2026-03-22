@@ -1,26 +1,28 @@
 -- =============================================================
--- Megaproject Database Schema (Reference)
+-- SkillForge Database Schema (Reference)
 -- PostgreSQL + pgvector + TimescaleDB
+-- Bank-Level Security: Encrypted fields, audit log, GDPR
 -- =============================================================
 
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "vector";         -- pgvector
 CREATE EXTENSION IF NOT EXISTS "timescaledb";    -- TimescaleDB
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";       -- Encryption functions
 
 -- =============================================================
--- USERS
+-- USERS (Core identity)
 -- =============================================================
 CREATE TABLE users (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email           VARCHAR(255) UNIQUE NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL,
     full_name       VARCHAR(255) NOT NULL,
-    role            VARCHAR(50) DEFAULT 'learner',  -- learner, admin
-    career_goal     VARCHAR(255),                    -- e.g., 'backend_engineer', 'fullstack'
-    current_role    VARCHAR(255),                    -- e.g., 'frontend_developer'
+    role            VARCHAR(50) DEFAULT 'learner',  -- learner, premium, admin
+    career_goal     VARCHAR(255),
+    current_role    VARCHAR(255),
     experience_years INTEGER DEFAULT 0,
     is_active       BOOLEAN DEFAULT TRUE,
+    email_verified  BOOLEAN DEFAULT FALSE,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -28,24 +30,96 @@ CREATE TABLE users (
 CREATE INDEX idx_users_email ON users(email);
 
 -- =============================================================
+-- USER CREDENTIALS (Separated for security — never SELECT *)
+-- =============================================================
+CREATE TABLE user_credentials (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    password_hash   VARCHAR(255) NOT NULL,           -- bcrypt, cost 12+
+    mfa_secret      BYTEA,                           -- Encrypted TOTP secret
+    mfa_enabled     BOOLEAN DEFAULT FALSE,
+    failed_attempts INTEGER DEFAULT 0,
+    locked_until    TIMESTAMPTZ,
+    last_login      TIMESTAMPTZ,
+    password_changed_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+-- =============================================================
+-- GDPR CONSENT RECORDS
+-- =============================================================
+CREATE TABLE gdpr_consent (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    consent_type    VARCHAR(100) NOT NULL,            -- 'data_processing', 'marketing', 'analytics'
+    granted         BOOLEAN NOT NULL,
+    granted_at      TIMESTAMPTZ,
+    revoked_at      TIMESTAMPTZ,
+    ip_address      INET,                             -- IP at time of consent
+    user_agent      TEXT,                              -- Browser info at time of consent
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_consent_user ON gdpr_consent(user_id);
+
+-- =============================================================
+-- SUBSCRIPTIONS (Billing)
+-- =============================================================
+CREATE TABLE subscriptions (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tier            VARCHAR(20) NOT NULL DEFAULT 'free', -- free, pro, enterprise
+    billing_cycle   VARCHAR(20),                      -- monthly, annual
+    stripe_customer_id VARCHAR(255),
+    stripe_subscription_id VARCHAR(255),
+    status          VARCHAR(20) DEFAULT 'active',     -- active, trialing, past_due, canceled
+    trial_end       TIMESTAMPTZ,
+    current_period_start TIMESTAMPTZ,
+    current_period_end   TIMESTAMPTZ,
+    canceled_at     TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+CREATE INDEX idx_subscriptions_stripe ON subscriptions(stripe_customer_id);
+
+-- =============================================================
+-- INVOICES
+-- =============================================================
+CREATE TABLE invoices (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subscription_id UUID REFERENCES subscriptions(id),
+    stripe_invoice_id VARCHAR(255),
+    amount_cents    INTEGER NOT NULL,
+    currency        VARCHAR(3) DEFAULT 'EUR',
+    status          VARCHAR(20) NOT NULL,             -- paid, open, void, draft
+    paid_at         TIMESTAMPTZ,
+    invoice_url     TEXT,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_invoices_user ON invoices(user_id);
+
+-- =============================================================
 -- COMPETENCY VECTORS (pgvector)
 -- =============================================================
--- Each user has an embedding representing their skill profile.
--- Updated by AI Workers after each assessment event.
 CREATE TABLE competency_vectors (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    embedding       vector(1536) NOT NULL,           -- OpenAI-compatible dimensions
-    domain          VARCHAR(100) NOT NULL,            -- 'frontend', 'backend', 'system_design', etc.
-    confidence      FLOAT DEFAULT 0.0,                -- 0.0 to 1.0
-    last_updated_by VARCHAR(255),                     -- event_id that triggered this update
+    embedding       vector(1536) NOT NULL,
+    domain          VARCHAR(100) NOT NULL,
+    confidence      FLOAT DEFAULT 0.0,
+    last_updated_by VARCHAR(255),
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, domain)
 );
 
 CREATE INDEX idx_competency_vectors_user ON competency_vectors(user_id);
-CREATE INDEX idx_competency_vectors_embedding ON competency_vectors 
+CREATE INDEX idx_competency_vectors_embedding ON competency_vectors
     USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- =============================================================
@@ -56,7 +130,7 @@ CREATE TABLE assessments (
     title           VARCHAR(255) NOT NULL,
     description     TEXT,
     domain          VARCHAR(100) NOT NULL,
-    difficulty      VARCHAR(20) DEFAULT 'medium',    -- easy, medium, hard, adaptive
+    difficulty      VARCHAR(20) DEFAULT 'medium',
     question_count  INTEGER DEFAULT 10,
     time_limit_sec  INTEGER DEFAULT 600,
     is_active       BOOLEAN DEFAULT TRUE,
@@ -67,19 +141,19 @@ CREATE TABLE assessment_questions (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     assessment_id   UUID REFERENCES assessments(id) ON DELETE CASCADE,
     question_text   TEXT NOT NULL,
-    question_type   VARCHAR(20) NOT NULL,            -- 'mcq', 'open', 'code', 'system_design'
-    options         JSONB,                            -- for MCQ: [{"text": "...", "is_correct": true}]
+    question_type   VARCHAR(20) NOT NULL,
+    options         JSONB,
     correct_answer  TEXT,
     domain          VARCHAR(100) NOT NULL,
     difficulty      VARCHAR(20) DEFAULT 'medium',
-    is_stealth      BOOLEAN DEFAULT FALSE,           -- stealth question from adjacent domain
-    embedding       vector(1536),                     -- for RAG-based question selection
+    is_stealth      BOOLEAN DEFAULT FALSE,
+    embedding       vector(1536),
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_questions_assessment ON assessment_questions(assessment_id);
 CREATE INDEX idx_questions_domain ON assessment_questions(domain);
-CREATE INDEX idx_questions_embedding ON assessment_questions 
+CREATE INDEX idx_questions_embedding ON assessment_questions
     USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- =============================================================
@@ -92,14 +166,13 @@ CREATE TABLE assessment_results (
     question_id     UUID NOT NULL REFERENCES assessment_questions(id),
     user_answer     TEXT,
     is_correct      BOOLEAN,
-    response_time_ms INTEGER,                        -- how fast was the answer
-    confidence_score FLOAT,                          -- AI-assessed depth of understanding
-    ai_analysis     JSONB,                           -- detailed AI analysis of the answer
+    response_time_ms INTEGER,
+    confidence_score FLOAT,
+    ai_analysis     JSONB,
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_results_user ON assessment_results(user_id);
-CREATE INDEX idx_results_assessment ON assessment_results(assessment_id);
 
 -- =============================================================
 -- LEARNING MATERIALS (pgvector for RAG)
@@ -107,12 +180,12 @@ CREATE INDEX idx_results_assessment ON assessment_results(assessment_id);
 CREATE TABLE learning_materials (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title           VARCHAR(500) NOT NULL,
-    source          VARCHAR(255),                    -- book title, URL, etc.
-    content_chunk   TEXT NOT NULL,                    -- chunked text for RAG
+    source          VARCHAR(255),
+    content_chunk   TEXT NOT NULL,
     chunk_index     INTEGER DEFAULT 0,
     domain          VARCHAR(100) NOT NULL,
     tags            TEXT[],
-    embedding       vector(1536) NOT NULL,           -- for semantic search
+    embedding       vector(1536) NOT NULL,
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -126,8 +199,8 @@ CREATE INDEX idx_materials_embedding ON learning_materials
 CREATE TABLE learning_paths (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    path_data       JSONB NOT NULL,                  -- structured learning path
-    generated_by    VARCHAR(255),                    -- which AI model generated it
+    path_data       JSONB NOT NULL,
+    generated_by    VARCHAR(255),
     version         INTEGER DEFAULT 1,
     is_active       BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
@@ -142,27 +215,43 @@ CREATE INDEX idx_paths_user ON learning_paths(user_id);
 CREATE TABLE user_progress (
     time            TIMESTAMPTZ NOT NULL,
     user_id         UUID NOT NULL,
-    metric_type     VARCHAR(50) NOT NULL,            -- 'quiz_score', 'response_time', 'streak', 'engagement'
+    metric_type     VARCHAR(50) NOT NULL,
     domain          VARCHAR(100),
     value           FLOAT NOT NULL,
     metadata        JSONB
 );
 
--- Convert to TimescaleDB hypertable for efficient time-series queries
 SELECT create_hypertable('user_progress', 'time');
-
 CREATE INDEX idx_progress_user_time ON user_progress(user_id, time DESC);
 CREATE INDEX idx_progress_metric ON user_progress(metric_type, time DESC);
 
 -- =============================================================
+-- AUDIT LOG (Immutable — GDPR, bank-level compliance)
+-- =============================================================
+CREATE TABLE audit_log (
+    time            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actor_id        UUID,                             -- Who did it (user or system)
+    actor_type      VARCHAR(50) NOT NULL,             -- 'user', 'system', 'admin'
+    action          VARCHAR(100) NOT NULL,            -- 'login', 'data_export', 'data_delete', etc.
+    resource_type   VARCHAR(100),                     -- 'user', 'subscription', 'assessment'
+    resource_id     UUID,
+    details         JSONB,                            -- Additional context
+    ip_address      INET,
+    user_agent      TEXT,
+    success         BOOLEAN DEFAULT TRUE
+);
+
+SELECT create_hypertable('audit_log', 'time');
+CREATE INDEX idx_audit_actor ON audit_log(actor_id, time DESC);
+CREATE INDEX idx_audit_action ON audit_log(action, time DESC);
+
+-- =============================================================
 -- EVENTS OUTBOX (Transactional Outbox Pattern)
 -- =============================================================
--- Events are written here in the same transaction as state changes.
--- A separate relay process reads and publishes them to Redpanda.
 CREATE TABLE events_outbox (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_type      VARCHAR(100) NOT NULL,           -- 'UserAnsweredQuestion', 'CompetencyUpdated', etc.
-    aggregate_type  VARCHAR(100) NOT NULL,            -- 'user', 'assessment', etc.
+    event_type      VARCHAR(100) NOT NULL,
+    aggregate_type  VARCHAR(100) NOT NULL,
     aggregate_id    UUID NOT NULL,
     payload         JSONB NOT NULL,
     published       BOOLEAN DEFAULT FALSE,

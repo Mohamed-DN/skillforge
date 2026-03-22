@@ -1,7 +1,8 @@
-# 🗺️ Roadmap — Megaproject
+# 🗺️ Roadmap — SkillForge
 
 > Your step-by-step guide from zero to production. Each phase builds on the previous one.
 > Check off items as you complete them. This is your personal learning journal.
+> **DDIA v2 chapter references** are noted for each phase.
 
 ---
 
@@ -9,327 +10,190 @@
 > *Repository scaffolding and documentation*
 
 - [x] Initialize Git repository
-- [x] Create directory structure for all services
+- [x] Create directory structure for all 9 services
 - [x] Write main README.md with architecture diagrams
 - [x] Write AI_CONTEXT.md for AI assistants
+- [x] Write PERSONAL_GUIDE.md (zero-to-hero manual)
 - [x] Write this ROADMAP.md
 - [x] Write CONTRIBUTING.md
-- [x] Create .gitignore
-- [x] Push initial commit to GitHub
+- [x] Push to GitHub (github.com/Mohamed-DN/skillforge)
 
 ---
 
 ## Phase 1: Database & Data Model 🔴
-> *DDIA v2 Focus: Data Models, Storage Engines, Data Encoding*
+> *DDIA v2: Ch3 (Data Models), Ch4 (Storage & Retrieval), Ch8 (Transactions)*
 
-- [ ] Install PostgreSQL locally (or use Docker)
+- [ ] Install PostgreSQL locally via Podman
 - [ ] Enable extensions: `pgvector`, `timescaledb`
-- [ ] Design and create the core schema:
-  - [ ] `users` table (auth, profile, preferences)
-  - [ ] `competency_vectors` table (pgvector embeddings)
-  - [ ] `assessments` table (quiz definitions, questions)
-  - [ ] `assessment_results` table (user answers, scores)
-  - [ ] `learning_materials` table (content chunks + pgvector embeddings)
-  - [ ] `learning_paths` table (personalized paths per user)
-  - [ ] `user_progress` hypertable (TimescaleDB time-series)
-  - [ ] `events_outbox` table (transactional outbox pattern)
+- [ ] Create core schema (users, credentials, competency_vectors, assessments, learning_materials, subscriptions, invoices, audit_log, gdpr_consent, events_outbox)
 - [ ] Set up Alembic for migration management
 - [ ] Create initial migration
 - [ ] Write seed data scripts
-- [ ] Document schema in `database/schema.sql`
-
-### 📚 What You'll Learn
-- Relational data modeling, normalization vs denormalization tradeoffs
-- Vector embeddings and similarity search (pgvector)
-- Time-series data patterns (TimescaleDB hypertables)
-- The transactional outbox pattern (exactly-once event publishing)
+- [ ] Test vector similarity search with sample embeddings
 
 ---
 
-## Phase 2: API Gateway (First Microservice) 🔴
-> *DDIA v2 Focus: Non-functional Requirements, API Design*
+## Phase 2: Auth Service (Bank-Level) 🔴
+> *DDIA v2: Ch8 (Transactions — ACID), Ch10 (Consistency & Consensus)*
 
-- [ ] Set up FastAPI project in `services/api-gateway/`
-- [ ] Implement health check endpoint (`/health`, `/ready`)
-- [ ] Implement JWT authentication (login/register)
-- [ ] Create user CRUD endpoints
-- [ ] Create assessment endpoints (start quiz, submit answer)
-- [ ] Add request validation (Pydantic models)
-- [ ] Add OpenAPI documentation
-- [ ] Write unit tests
-- [ ] Create Dockerfile
-- [ ] Define SLOs (p99 latency < 100ms, availability > 99.9%)
-
-### 📚 What You'll Learn
-- FastAPI async patterns, dependency injection
-- JWT authentication flow
-- API versioning and backward compatibility
-- Writing production-ready health checks
-
----
-
-## Phase 3: Event Bus (Redpanda) 🔴
-> *DDIA v2 Focus: Stream Processing, Message Delivery Semantics*
-
-- [ ] Deploy Redpanda locally (Docker Compose)
-- [ ] Define event schemas in Protobuf:
-  - [ ] `UserRegistered`
-  - [ ] `UserAnsweredQuestion`
-  - [ ] `CVUploaded`
-  - [ ] `CompetencyVectorUpdated`
-  - [ ] `LearningPathGenerated`
-  - [ ] `AssessmentCompleted`
-- [ ] Set up Schema Registry
-- [ ] Configure topics (`topics.yaml`):
-  - [ ] Partition strategy (by `user_id`)
-  - [ ] Retention policies
-  - [ ] Replication factor
-- [ ] Create shared Python event client (`libs/py-common/`)
-- [ ] Integrate API Gateway → publish events on user actions
-- [ ] Implement the transactional outbox relay
-
-### 📚 What You'll Learn
-- Event-driven architecture fundamentals
-- Schema evolution and compatibility (backward/forward)
-- Partitioning strategies for ordered event processing
-- Exactly-once delivery semantics
-
----
-
-## Phase 4: LLM Gateway 🔴
-> *DDIA v2 Focus: Trade-offs, Service Architecture*
-
-- [ ] Deploy LiteLLM as a service in `services/llm-gateway/`
-- [ ] Configure model routing:
-  - [ ] DeepSeek for fast/cheap tasks (quiz generation)
-  - [ ] Google Gemini for long-context tasks (CV analysis)
-  - [ ] OpenAI GPT for general reasoning
-- [ ] Add fallback logic (if primary model fails, try secondary)
-- [ ] Add cost tracking and token usage logging
-- [ ] Add rate limiting per model provider
-- [ ] Create health checks for each provider
-- [ ] Write integration tests with mock LLM responses
-- [ ] Create Dockerfile
-
-### 📚 What You'll Learn
-- Multi-provider LLM abstraction
-- Fallback and retry patterns
-- Cost optimization for AI workloads
-- LiteLLM configuration and customization
-
----
-
-## Phase 5: AI Workers 🔴
-> *DDIA v2 Focus: Stream Processing, Derived Data, Materialized Views*
-
-- [ ] Create AI Worker service (`services/ai-worker/`)
-- [ ] Implement Redpanda consumer (consume `UserAnsweredQuestion` events)
-- [ ] Implement skill analysis logic:
-  - [ ] Call LLM Gateway to analyze answer depth
-  - [ ] Compute updated competency vector
-  - [ ] Store updated vector in pgvector
-- [ ] Implement dead-letter queue for failed processing
-- [ ] Make consumers idempotent (event_id deduplication)
-- [ ] Add circuit breaker for LLM Gateway calls
-- [ ] Write unit + integration tests
-- [ ] Create Dockerfile
-
-### 📚 What You'll Learn
-- Consumer group patterns
-- Idempotent event processing
-- Circuit breaker pattern
-- Derived data from event streams
-
----
-
-## Phase 6: Assessment Engine + RAG 🔴
-> *DDIA v2 Focus: Derived Data, Search, Query Processing*
-
-- [ ] Create Assessment Engine service (`services/assessment-engine/`)
-- [ ] Implement adaptive quiz generation:
-  - [ ] Fetch user's competency vector from pgvector
-  - [ ] RAG query: vector similarity search on `learning_materials`
-  - [ ] Generate questions via LLM Gateway
-  - [ ] Implement "stealth questions" injection (15% from adjacent domains)
-- [ ] Implement quiz evaluation logic
-- [ ] Write comprehensive tests
-- [ ] Create Dockerfile
-
-### 📚 What You'll Learn
-- Retrieval Augmented Generation (RAG) pipeline
-- Vector similarity search (cosine, L2, inner product)
-- Hybrid search (vector + keyword + temporal)
-- Adaptive difficulty algorithms
-
----
-
-## Phase 7: CV Analyzer 🔴
-> *DDIA v2 Focus: Batch vs Stream, Data Pipelines*
-
-- [ ] Create CV Analyzer service (`services/cv-analyzer/`)
-- [ ] Implement PDF/DOCX parsing (PyPDF2, python-docx)
-- [ ] Implement skill extraction via LLM Gateway
-- [ ] Generate initial competency vector from CV
-- [ ] Store CV in S3-compatible storage (MinIO)
-- [ ] Publish `CVAnalyzed` event with extracted skills
+- [ ] Set up FastAPI project in `services/auth-service/`
+- [ ] Implement user registration (bcrypt, cost 12+)
+- [ ] Implement JWT auth (RS256 asymmetric keys)
+- [ ] Implement refresh token rotation (Redis)
+- [ ] Implement RBAC (admin, learner, premium)
+- [ ] Add rate-limited login (brute-force protection)
+- [ ] Add password reset flow
+- [ ] Implement GDPR endpoints (export, erase, consent)
 - [ ] Write tests
-- [ ] Create Dockerfile
-
-### 📚 What You'll Learn
-- Document parsing and text extraction
-- Information extraction with LLMs
-- Object storage patterns (S3 API)
-- Processing pipeline design
+- [ ] Create Containerfile
 
 ---
 
-## Phase 8: User Profile & Notification Services 🔴
-> *DDIA v2 Focus: Microservice boundaries, Domain-Driven Design*
+## Phase 3: API Gateway 🔴
+> *DDIA v2: Ch2 (Non-functional Requirements)*
 
-- [ ] Create User Profile service (`services/user-profile-service/`)
-  - [ ] CRUD for user profiles
-  - [ ] Career goals management
-  - [ ] Competency vector retrieval API
-  - [ ] Learning history aggregation
-- [ ] Create Notification service (`services/notification-service/`)
-  - [ ] Email notifications (learning milestones)
-  - [ ] In-app notifications
-  - [ ] Consume relevant events from Redpanda
-- [ ] Write tests for both services
-- [ ] Create Dockerfiles
-
-### 📚 What You'll Learn
-- Service boundary design (DDD bounded contexts)
-- Event-driven notification patterns
-- Email delivery with retry logic
+- [ ] Set up FastAPI in `services/api-gateway/`
+- [ ] Health/readiness endpoints
+- [ ] JWT validation middleware (calls auth-service)
+- [ ] Request validation (Pydantic)
+- [ ] User CRUD, assessment, CV upload endpoints
+- [ ] OpenAPI docs
+- [ ] Rate limiting (per-user, per-IP)
+- [ ] Write tests + Containerfile
+- [ ] Define SLOs (p99 < 100ms, availability > 99.9%)
 
 ---
 
-## Phase 9: Kubernetes Deployment 🔴
-> *DDIA v2 Focus: Deployment, Scaling, Fault Tolerance*
+## Phase 4: Event Bus (Redpanda) 🔴
+> *DDIA v2: Ch5 (Encoding & Evolution), Ch12 (Stream Processing)*
 
-- [ ] Write Kubernetes manifests for all services:
-  - [ ] Deployments with resource limits
-  - [ ] Services (ClusterIP, NodePort as needed)
-  - [ ] ConfigMaps for configuration
-  - [ ] Secrets for API keys
-- [ ] Set up Kustomize overlays (dev vs prod)
-- [ ] Deploy Redpanda via Helm
-- [ ] Deploy PostgreSQL via Helm (with pgvector + TimescaleDB)
-- [ ] Install and configure KEDA:
-  - [ ] ScaledObject for AI Worker (scale on consumer lag)
-  - [ ] ScaledObject for CV Analyzer
-- [ ] Set up Ingress (NGINX or Traefik)
-- [ ] Test full deployment on Minikube/Kind
-- [ ] Document deployment in runbooks
-
-### 📚 What You'll Learn
-- Kubernetes resource management
-- Kustomize for environment-specific configs
-- KEDA event-driven autoscaling
-- Helm chart management
-- Production readiness patterns
+- [ ] Deploy Redpanda via Podman Compose
+- [ ] Define Protobuf event schemas (+ auth/billing events)
+- [ ] Set up Schema Registry
+- [ ] Configure topics (partitioning by user_id)
+- [ ] Create shared event client (`libs/py-common/`)
+- [ ] Integrate API Gateway → publish events
+- [ ] Implement transactional outbox relay
 
 ---
 
-## Phase 10: Observability 🔴
-> *DDIA v2 Focus: Monitoring, Debugging Distributed Systems*
+## Phase 5: LLM Gateway 🔴
+> *DDIA v2: Ch1 (Trade-offs)*
 
-- [ ] Deploy OpenTelemetry Collector
-- [ ] Instrument all services with OpenTelemetry SDK:
-  - [ ] Traces (request → event → worker → LLM → DB)
-  - [ ] Metrics (request count, latency, error rate)
-  - [ ] Structured JSON logs
-- [ ] Deploy Prometheus + Grafana
-- [ ] Create dashboards:
-  - [ ] System overview (all services health)
-  - [ ] AI Worker throughput and latency
-  - [ ] Redpanda consumer lag
-  - [ ] Database query performance
-  - [ ] LLM cost tracking
-- [ ] Create alerting rules:
-  - [ ] High p99 latency
-  - [ ] Queue depth spike
-  - [ ] Error rate > threshold
-  - [ ] LLM provider outage
-
-### 📚 What You'll Learn
-- Distributed tracing across microservices
-- Prometheus query language (PromQL)
-- Grafana dashboard design
-- Alerting strategies for data-intensive systems
+- [ ] Deploy LiteLLM in `services/llm-gateway/`
+- [ ] Configure model routing (DeepSeek/Gemini/OpenAI)
+- [ ] Add fallback logic + cost tracking
+- [ ] Rate limiting per provider
+- [ ] Write tests + Containerfile
 
 ---
 
-## Phase 11: CI/CD Pipeline 🔴
-> *DDIA v2 Focus: Maintainability, Evolvability*
+## Phase 6: AI Workers 🔴
+> *DDIA v2: Ch12 (Stream Processing), Ch13 (Philosophy of Streaming)*
 
-- [ ] Create GitHub Actions CI workflow:
-  - [ ] Lint (ruff, mypy)
-  - [ ] Unit tests (pytest)
-  - [ ] Integration tests
-  - [ ] Build Docker images
-  - [ ] Push to container registry
-- [ ] Create GitHub Actions CD workflow:
-  - [ ] Deploy to staging on PR merge
-  - [ ] Deploy to production on release tag
-- [ ] Add branch protection rules
-- [ ] Add automated schema compatibility checks
-
-### 📚 What You'll Learn
-- CI/CD pipeline design
-- Container image lifecycle
-- GitOps deployment patterns
-- Automated quality gates
+- [ ] Create AI Worker with Redpanda consumer
+- [ ] Implement skill analysis (LLM Gateway → pgvector update)
+- [ ] Dead-letter queue + idempotent processing
+- [ ] Circuit breaker for LLM calls
+- [ ] Write tests + Containerfile
 
 ---
 
-## Phase 12: Production Hardening 🔴
-> *DDIA v2 Focus: Reliability, The Trouble with Distributed Systems*
+## Phase 7: Assessment Engine + RAG 🔴
+> *DDIA v2: Ch4 (Storage & Retrieval — indexes, search)*
 
-- [ ] Implement rate limiting on API Gateway
-- [ ] Add request tracing correlation IDs
-- [ ] Implement graceful shutdown for all services
-- [ ] Add Pod Disruption Budgets
-- [ ] Implement database connection pooling
-- [ ] Add retry logic with exponential backoff everywhere
-- [ ] Security audit:
-  - [ ] Input sanitization
-  - [ ] SQL injection prevention (parameterized queries)
-  - [ ] Secret rotation strategy
-  - [ ] Network policies (pod-to-pod isolation)
-- [ ] Load testing (k6 or locust)
-- [ ] Chaos testing (kill pods, simulate network partition)
-
-### 📚 What You'll Learn
-- Production reliability engineering
-- Chaos engineering principles
-- Security hardening for microservices
-- Load and stress testing
+- [ ] RAG pipeline (pgvector similarity → LLM generation)
+- [ ] Adaptive quiz with "stealth questions" (15% adjacent domain)
+- [ ] Quiz evaluation
+- [ ] Write tests + Containerfile
 
 ---
 
-## Phase 13: Frontend (Optional) 🔴
-> *Not DDIA-focused, but needed for a complete product*
+## Phase 8: CV Analyzer 🔴
+> *DDIA v2: Ch12 (Stream Processing — data pipelines)*
 
-- [ ] Choose framework (Next.js or React + Vite)
-- [ ] Implement authentication UI
-- [ ] Build dashboard (learning progress, competency radar chart)
-- [ ] Build quiz interface
-- [ ] Build CV upload interface
-- [ ] Build learning path visualization
-- [ ] Connect to API Gateway via REST/WebSocket
+- [ ] PDF/DOCX parsing
+- [ ] Skill extraction via LLM
+- [ ] Initial competency vector generation
+- [ ] S3 storage (MinIO)
+- [ ] Write tests + Containerfile
 
 ---
 
-## 🏆 Graduation Criteria
+## Phase 9: Billing Service (Stripe) 🔴
+> *DDIA v2: Ch8 (Transactions — ACID for payments)*
 
-When you've completed Phases 1-12, you will have built:
+- [ ] Stripe integration (Checkout Sessions)
+- [ ] Subscription lifecycle (create/upgrade/downgrade/cancel)
+- [ ] Webhook handling (signature verification)
+- [ ] Invoice generation
+- [ ] Trial period management
+- [ ] Payment event sourcing
+- [ ] Write tests + Containerfile
 
-- ✅ A **production-grade, event-driven microservices system**
-- ✅ An **AI-powered application** with intelligent model routing
-- ✅ A **Kubernetes-native deployment** with auto-scaling
-- ✅ A **data-intensive system** implementing core DDIA v2 patterns
-- ✅ A **portfolio project** that demonstrates senior-level engineering
+---
 
-**This is not just a project — it's proof that you can design and build systems at scale.**
+## Phase 10: User Profile & Notifications 🔴
+> *DDIA v2: Ch3 (Data Models — domain boundaries)*
+
+- [ ] User Profile CRUD + competency vector API
+- [ ] Notification service (email + in-app)
+- [ ] Event-driven notifications from Redpanda
+- [ ] Write tests + Containerfiles
+
+---
+
+## Phase 11: Kubernetes Deployment 🔴
+> *DDIA v2: Ch6 (Replication), Ch7 (Sharding), Ch9 (Distributed Systems)*
+
+- [ ] K8s manifests for all 9 services (Kustomize base/overlays)
+- [ ] Deploy Redpanda, PostgreSQL, Redis via Helm
+- [ ] KEDA ScaledObjects (AI Worker, CV Analyzer)
+- [ ] Ingress (NGINX + TLS 1.3)
+- [ ] Network policies (zero-trust)
+- [ ] Test on Minikube/Kind
+
+---
+
+## Phase 12: Security Hardening 🔴
+> *DDIA v2: Ch9 (Trouble with Distributed Systems), Ch14 (Doing the Right Thing)*
+
+- [ ] mTLS between services (cert-manager)
+- [ ] HashiCorp Vault for secrets
+- [ ] Trivy image scanning in CI
+- [ ] Read-only root filesystem (Podman)
+- [ ] Audit logging (immutable)
+- [ ] GDPR full compliance review
+- [ ] Load + chaos testing
+
+---
+
+## Phase 13: Observability 🔴
+> *DDIA v2: Ch2 (Measuring Performance), Ch9 (Debugging)*
+
+- [ ] OpenTelemetry instrumentation (all services)
+- [ ] Prometheus + Grafana dashboards
+- [ ] Alerting rules (latency, errors, queue depth, LLM cost)
+- [ ] Distributed tracing end-to-end
+
+---
+
+## Phase 14: CI/CD 🔴
+> *DDIA v2: Ch2 (Maintainability, Evolvability)*
+
+- [ ] GitHub Actions CI (lint, test, build, Trivy scan)
+- [ ] CD pipeline (deploy to staging/prod)
+- [ ] Schema compatibility checks
+- [ ] Branch protection rules
+
+---
+
+## Phase 15: Frontend (Optional) 🔴
+- [ ] Next.js or React + Vite
+- [ ] Auth UI, dashboard, quiz, CV upload, billing portal
+
+---
+
+## 🏆 Graduation
+
+Phases 1-14 complete = **production-grade, bank-level secure, DDIA v2 showcase system**.

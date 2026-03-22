@@ -1,4 +1,4 @@
-# 🤝 Contributing to Megaproject
+# 🤝 Contributing to SkillForge
 
 Thank you for your interest in contributing! This document outlines the conventions and workflows used in this project.
 

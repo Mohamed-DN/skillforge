@@ -1,7 +1,7 @@
 # ============================================================
-# Megaproject — Local Development Stack
+# SkillForge — Local Development Stack (Podman Compose)
 # ============================================================
-# Usage: docker compose -f infra/docker/docker-compose.yml up -d
+# Usage: podman-compose -f infra/containers/podman-compose.yml up -d
 # ============================================================
 
 version: "3.9"
@@ -10,18 +10,18 @@ services:
   # ── Database ─────────────────────────────────────────────
   postgres:
     image: timescale/timescaledb:latest-pg16
-    container_name: megaproject-postgres
+    container_name: skillforge-postgres
     environment:
-      POSTGRES_DB: megaproject
-      POSTGRES_USER: megaproject
-      POSTGRES_PASSWORD: megaproject_dev
+      POSTGRES_DB: skillforge
+      POSTGRES_USER: skillforge
+      POSTGRES_PASSWORD: skillforge_dev_CHANGE_ME
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../../database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U megaproject"]
+      test: ["CMD-SHELL", "pg_isready -U skillforge"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,18 +29,33 @@ services:
   # ── Enable pgvector extension ────────────────────────────
   postgres-init:
     image: timescale/timescaledb:latest-pg16
-    container_name: megaproject-postgres-init
+    container_name: skillforge-postgres-init
     depends_on:
       postgres:
         condition: service_healthy
     entrypoint: >
-      sh -c "PGPASSWORD=megaproject_dev psql -h postgres -U megaproject -d megaproject -c 'CREATE EXTENSION IF NOT EXISTS vector;'"
+      sh -c "PGPASSWORD=skillforge_dev_CHANGE_ME psql -h postgres -U skillforge -d skillforge -c 'CREATE EXTENSION IF NOT EXISTS vector;'"
     restart: "no"
+
+  # ── Redis (Sessions + Cache) ─────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: skillforge-redis
+    command: redis-server --requirepass skillforge_redis_CHANGE_ME --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "skillforge_redis_CHANGE_ME", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ── Event Bus (Redpanda) ─────────────────────────────────
   redpanda:
     image: redpandadata/redpanda:latest
-    container_name: megaproject-redpanda
+    container_name: skillforge-redpanda
     command:
       - redpanda
       - start
@@ -55,16 +70,16 @@ services:
       - --advertise-pandaproxy-addr=localhost:8082
       - --schema-registry-addr=0.0.0.0:8081
     ports:
-      - "9092:9092"    # Kafka API
-      - "8081:8081"    # Schema Registry
-      - "8082:8082"    # HTTP Proxy
+      - "9092:9092"
+      - "8081:8081"
+      - "8082:8082"
     volumes:
       - redpanda_data:/var/lib/redpanda/data
 
   # ── Redpanda Console (UI) ───────────────────────────────
   redpanda-console:
     image: redpandadata/console:latest
-    container_name: megaproject-redpanda-console
+    container_name: skillforge-redpanda-console
     depends_on:
       - redpanda
     environment:
@@ -73,21 +88,22 @@ services:
     ports:
       - "8080:8080"
 
-  # ── Object Storage (MinIO) ──────────────────────────────
+  # ── Object Storage (MinIO — S3-compatible) ──────────────
   minio:
     image: minio/minio:latest
-    container_name: megaproject-minio
+    container_name: skillforge-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: megaproject
-      MINIO_ROOT_PASSWORD: megaproject_dev
+      MINIO_ROOT_USER: skillforge
+      MINIO_ROOT_PASSWORD: skillforge_minio_CHANGE_ME
     ports:
-      - "9000:9000"    # S3 API
-      - "9001:9001"    # Console
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
 
 volumes:
   postgres_data:
+  redis_data:
   redpanda_data:
   minio_data:
