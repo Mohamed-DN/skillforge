@@ -29,6 +29,9 @@ SkillForge is not just another LMS (Learning Management System). It is a **predi
   - **Vector (pgvector)**: For AI RAG, semantic search, and user competency vectors (1536-dim).
   - **Time-Series (TimescaleDB)**: For tracking skill progression and chat histories over time.
   - **NoSQL / Flexible (JSONB)**: For deeply nested, highly dynamic unstructured data (active hours, learning styles, complex AI analysis reports, gamification states) avoiding rigid schema changes.
+- **Production Paradigm (Full-Stack HA)**: 
+  - Zero Single Points of Failure. 
+  - 3-Node HA PostgreSQL (User DBA managed), 3-Broker Redpanda (Raft Consensus), Distributed MinIO (Erasure Coding), and HPA scaled microservices.
 - **Security Level**: Bank-grade (mTLS, encryption at rest + transit, GDPR, audit logs)
 
 ---
