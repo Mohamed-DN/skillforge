@@ -1066,40 +1066,32 @@ Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**
 
 ---
 
-### 📊 Modello Finanziario di PRODUZIONE (Scenario: 1.000 Utenti Attivi Mensili)
+### 📊 Costi vs Benefici dell'Alta Affidabilità (HA)
 
-#### 📉 Spese Operative (OPEX) in Produzione
+Perché paghiamo per 3 Nodi K8s invece che uno singolo gigante?
 
-| Voce di Costo | Dettaglio tecnico | Costo/Mese |
-|---------------|-------------------|------------|
-| **Compute K8s** | DigitalOcean DOKS (3 nodi, 4GB RAM) + Load Balancer | ~€ 80,00 |
-| **Database** | PostgreSQL Self-Hosted sul cluster K8s / Nodo VPS | **€ 0,00** |
-| **Dominio & DNS** | Cloudflare (Free) + rinnovo dominio | ~€ 2,00 |
-| **LLM Inference** | Mix di DeepSeek (90%) e Claude (10%) | ~€ 15,00 |
-| **Transactional** | Commissioni Stripe (~2.9% + €0.25 a transazione) | *Variabile* |
-| **Totale Spese Fisse** | Infrastruttura rock-solid per servire 1K utenti | **~€ 97,00** |
+| 💸 Il Costo dell'HA | 🛡️ Il Benefit (ROI Invisibile) |
+|---------------------|---------------------------------|
+| **3x Costo Compute** (Es. €60/mese instead of €20) | **Uptime 99.99%**. Se un server si guasta alle 3 di notte, K8s sposta i pod, Postgres elegge un nuovo primary, e MinIO usa i frammenti rimasti. Nessuno si accorge di nulla, tu continui a dormire. |
+| **Erasure Coding Storage Overhead** (Usi più disco) | **Zero Perdita Dati**. I PDF dei CV e i log non vanno persi in caso di corruzione di un intero disco NVMe. |
+| **Complessità di Rete** (Load Balancer esterno, €10/mese) | **Zero Downtime Deployments**. Aggiorni i microservizi ("Rolling Update") senza che gli utenti vedano mai una pagina di errore. |
 
-#### 📈 Ricavi (Revenue)
-*Tasso di conversione conservativo del 5% su 1.000 utenti gratuiti.*
+---
 
-| Tier | Prezzo | Iscritti | Ricavo Lordo | Netto (dopo Stripe -3%) |
-|------|--------|----------|--------------|-------------------------|
-| **Pro** | € 9,99/mese | 40 utenti (4%) | € 399,60 | € 377,62 |
-| **Enterprise** | € 29,99/mese | 10 utenti (1%) | € 299,90 | € 288,40 |
-| **Totale** | | **50 utenti paganti** | **€ 699,50** | **€ 666,02** |
+### 📈 Modello Finanziario Scalato: Da 100 a 1.000.000 di Utenti
 
-#### 💎 Profit & Loss (P&L) Mensile
+*Ipotesi di conversione fissa: **4% piano Pro (€9.99), 1% piano Enterprise (€29.99) = 5% utenti paganti totali**.*
+*I costi OPEX includono: Cluster 3-Nodi (DOKS/Linode), Load Balancer, Token LLM (Mix DeepSeek 90% / Claude 10%), Dominio, Storage.*
 
-```text
-  Ricavi Netti (dopo le fee bancarie):   € 666,02
-- Spese Prod Infrastruttura & Cloud:     €  97,00
--------------------------------------------------
-= Utile Operativo (EBITDA):              € 569,02 al mese
-```
-*Margine di profitto netto: **85%*** 🚀
+| Target Utenti | Dettaglio Infrastruttura HA (Self-Hosted DB/Redpanda) | OPEX Mensile (Server+AI) | Utenti Paganti | Ricavi Netti (dopo Stripe 3%) | 👉 **EBITDA (Profitto Netto)** |
+|---------------|-------------------------------------------------------|--------------------------|----------------|-------------------------------|----------------------------------|
+| **100** | Minimo cluster HA (3 nodi da 2GB) per tolleranza guasti | ~€ 50 | 5 | ~€ 66 | **~€ 16 / mese** |
+| **1.000** | Cluster HA standard (3 nodi da 4GB/8GB) | ~€ 97 | 50 | ~€ 666 | **~€ 569 / mese** (85% margin) |
+| **10.000** | Nodi potenziati (es. 5 nodi da 16GB) + maggior uso AI | ~€ 280 | 500 | ~€ 6.660 | **~€ 6.380 / mese** (95% margin)|
+| **100.000** | Cluster da 10+ nodi potenti (32GB+), DB pesantemente sharded, massiccio uso AI API | ~€ 1.800 | 5.000 | ~€ 66.600 | **~€ 64.800 / mese** (97% margin)|
+| **1.000.000**| Flotta di decine di server DOKS, TB di dischi NVMe, milioni di token AI giornalieri | ~€ 12.000 | 50.000 | ~€ 666.000 | **~€ 654.000 / mese** 💸🚀 |
 
-**Con 10.000 utenti attivi (500 paganti):**
-Scalare DOKS aggiungendo nodi porterà il costo a circa **€250/mese**, ma i ricavi netti saranno di **€6.660/mese**. Profitto: **~€ 6.410/mese**. Questo è puro EBITDA massimizzando le tue skill da DBA!
+> *Nota: Quando arrivi a 1M di utenti, il costo dell'infrastruttura diventa trascurabile (circa l'1.8%) rispetto al fatturato. La scommessa dell'Open Source Cloud-Native è costruire **adesso** la base tecnica (HA, Redpanda, MinIO) che ti permette di incassare queste cifre **domani** senza dove pagare il "Pizzo Inverso" ai servizi Cloud Managed (AWS) che si mangerebbero il 40% del tuo margine.*
 
 
 ---
