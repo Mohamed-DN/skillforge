@@ -2,7 +2,7 @@
 
 > Questa guida è scritta **solo per te, Mohamed**. Spiega tutto il progetto da zero,
 > come costruire ogni pezzo a mano, e cosa imparerai ad ogni passo.
-> Il progetto ha **11 microservizi**, **19 tabelle**, **21 tipi di evento**.
+> Il progetto ha **12 microservizi**, **22 tabelle**, **25 tipi di evento**.
 
 ---
 
@@ -32,9 +32,10 @@ Un'app dove:
 | 6 | **ai-worker** | Worker | — | Consuma eventi, analizza risposte quiz, aggiorna vettori |
 | 7 | **user-intelligence-worker** | Worker | — | Analizza chat/quiz/CV/comportamento → arricchisce profilo |
 | 8 | **assessment-engine** | HTTP | 8002 | Genera quiz personalizzati con RAG (pgvector) |
-| 9 | **user-profile-service** | HTTP | 8003 | CRUD profilo, vettori competenze, obiettivi |
-| 10 | **cv-analyzer** | Worker | — | Parsing CV (PDF/DOCX), estrazione skills |
-| 11 | **notification-service** | HTTP | 8004 | Email, push, in-app notifications |
+| 9 | **career-advisor-service** | HTTP | 8008 | Analizza offerte lavoro, genera plan di studio (Skill Gap) |
+| 10 | **user-profile-service** | HTTP | 8003 | CRUD profilo, vettori competenze, obiettivi |
+| 11 | **cv-analyzer** | Worker | — | Parsing CV (PDF/DOCX), estrazione skills |
+| 12 | **notification-service** | HTTP | 8004 | Email, push, in-app notifications |
 
 ### I 3 Tipi di Servizio
 - **HTTP** = API che risponde a richieste (FastAPI + Uvicorn)
@@ -895,7 +896,34 @@ podman-compose -f infra/containers/podman-compose.yml up -d minio
 
 ---
 
-## 🔧 PASSO 12: Kubernetes — Vai in Produzione (DDIA Cap. 6-7, 9)
+## 🔧 PASSO 12: Career Advisor & The Brilliance Tier (DDIA Cap. 13)
+
+> **Cosa impari**: JsonB NoSQL flexibility inside Postgres, gamification loops, Job Market analysis.
+
+```python
+# services/career-advisor-service/src/main.py (Esempio)
+@app.post("/api/v1/career/analyze")
+async def analyze_job_offer(job_text: str, user=Depends(verify_token)):
+    # 1. Estrarre le skill dall'offerta (LLM)
+    # 2. Fare una vector search contro il competency_vector dell'utente
+    # 3. Restituire il GAP: cosa non sa fare
+    return {"gaps": ["Kubernetes", "Redis"]}
+
+# La genialità del NoSQL (JSONB) dentro Postgres (schema.sql)
+# CREATE TABLE user_dynamic_state (
+#    user_id UUID,
+#    ui_preferences JSONB,     -- UI si adatta allo stile di apprendimento
+#    gamification JSONB,       -- Esperienza, rami dell'albero abilità esplorati
+#    mental_state JSONB        -- Rischio burnout? Giornata leggera oggi!
+# );
+#
+# Perché JSONB e non tabelle classiche per questi dati?
+# Perché la gamification cambia spesso. Non vuoi fare 100 migrazioni DB!
+```
+
+---
+
+## 🔧 PASSO 13: Kubernetes — Vai in Produzione (DDIA Cap. 6-7, 9)
 
 > **Cosa impari**: Orchestrazione, replicazione, zero-trust, auto-scaling.
 
@@ -936,7 +964,7 @@ kubectl apply -k infra/k8s/overlays/dev/
 
 ---
 
-## 🔧 PASSO 13: Sicurezza Bancaria (DDIA Cap. 9, 14)
+## 🔧 PASSO 14: Sicurezza Bancaria (DDIA Cap. 9, 14)
 
 ```bash
 # mTLS: ogni servizio ha il suo certificato TLS
@@ -955,7 +983,7 @@ trivy image skillforge/api-gateway:latest
 
 ---
 
-## 🔧 PASSO 14: Observability (DDIA Cap. 2, 9)
+## 🔧 PASSO 15: Observability (DDIA Cap. 2, 9)
 
 ```bash
 # OpenTelemetry: traccia una richiesta attraverso TUTTI i servizi
@@ -1014,9 +1042,10 @@ Con 10.000 utenti: **~€5.400/mese di profitto**.
 | 9. RAG | Ch4 | Vector search, indexes, retrieval |
 | 10. Billing | Ch8 | ACID per pagamenti, Stripe webhook |
 | 11. CV + Notify | Ch12 | Async processing, object storage |
-| 12. Kubernetes | Ch6-7 | Replicazione, sharding, KEDA |
-| 13. Sicurezza | Ch9, Ch14 | mTLS, Vault, GDPR, audit trail |
-| 14. Observability | Ch2, Ch9 | Tracing, metriche, dashboard |
+| 12. Career Ad. | Ch13 | JSONB NoSQL flexibility, Derived intelligence |
+| 13. Kubernetes | Ch6-7 | Replicazione, sharding, KEDA |
+| 14. Sicurezza | Ch9, Ch14 | mTLS, Vault, GDPR, audit trail |
+| 15. Observability | Ch2, Ch9 | Tracing, metriche, dashboard |
 
 ---
 
@@ -1024,7 +1053,7 @@ Con 10.000 utenti: **~€5.400/mese di profitto**.
 
 - ✅ **Portfolio da senior engineer** — non un CRUD, un sistema distribuito completo
 - ✅ **SaaS funzionante** con pagamenti reali (Stripe)
-- ✅ **11 microservizi** su Kubernetes con auto-scaling
+- ✅ **12 microservizi** su Kubernetes con auto-scaling
 - ✅ **Ogni capitolo di DDIA v2** implementato concretamente
 - ✅ **Sicurezza bancaria** — mTLS, Vault, audit trail, GDPR
 - ✅ **Business reale** che genera profitto da €540/mese (1K utenti) a €5.400/mese (10K)
