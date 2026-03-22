@@ -1,0 +1,108 @@
+name: CI — Lint, Test, Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - services/api-gateway
+          - services/llm-gateway
+          - services/ai-worker
+          - services/assessment-engine
+          - services/user-profile-service
+          - services/cv-analyzer
+          - services/notification-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install ruff mypy black isort
+          if [ -f ${{ matrix.service }}/requirements.txt ]; then
+            pip install -r ${{ matrix.service }}/requirements.txt
+          fi
+      - name: Lint with Ruff
+        run: ruff check ${{ matrix.service }}/src/
+      - name: Check formatting with Black
+        run: black --check ${{ matrix.service }}/src/
+      - name: Check imports with isort
+        run: isort --check-only ${{ matrix.service }}/src/
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_DB: megaproject_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      matrix:
+        service:
+          - services/api-gateway
+          - services/llm-gateway
+          - services/ai-worker
+          - services/assessment-engine
+          - services/user-profile-service
+          - services/cv-analyzer
+          - services/notification-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          if [ -f ${{ matrix.service }}/requirements.txt ]; then
+            pip install -r ${{ matrix.service }}/requirements.txt
+          fi
+          pip install pytest pytest-cov pytest-asyncio
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/megaproject_test
+        run: |
+          if [ -d ${{ matrix.service }}/tests ]; then
+            pytest ${{ matrix.service }}/tests/ -v --cov=${{ matrix.service }}/src/
+          fi
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - llm-gateway
+          - ai-worker
+          - assessment-engine
+          - user-profile-service
+          - cv-analyzer
+          - notification-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        run: |
+          docker build -f infra/docker/Dockerfile.python-service \
+            -t megaproject/${{ matrix.service }}:${{ github.sha }} \
+            services/${{ matrix.service }}/

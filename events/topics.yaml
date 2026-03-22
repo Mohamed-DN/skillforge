@@ -1,0 +1,72 @@
+# Redpanda Topic Configuration
+# Apply with: rpk topic create --from topics.yaml
+
+topics:
+  # ── User Events ──────────────────────────────────────────
+  - name: user.registered
+    partitions: 6
+    replication_factor: 3
+    config:
+      retention.ms: "604800000"        # 7 days
+      cleanup.policy: "delete"
+
+  # ── Assessment Events ────────────────────────────────────
+  - name: assessment.answer
+    partitions: 12                      # Higher parallelism for high-volume
+    replication_factor: 3
+    config:
+      retention.ms: "2592000000"       # 30 days
+      cleanup.policy: "delete"
+    # Partition key: user_id (ordered per-user processing)
+
+  - name: assessment.completed
+    partitions: 6
+    replication_factor: 3
+    config:
+      retention.ms: "2592000000"       # 30 days
+      cleanup.policy: "delete"
+
+  # ── CV Events ────────────────────────────────────────────
+  - name: cv.uploaded
+    partitions: 6
+    replication_factor: 3
+    config:
+      retention.ms: "604800000"        # 7 days
+      cleanup.policy: "delete"
+
+  - name: cv.analyzed
+    partitions: 6
+    replication_factor: 3
+    config:
+      retention.ms: "604800000"
+      cleanup.policy: "delete"
+
+  # ── AI Processing Events ─────────────────────────────────
+  - name: competency.updated
+    partitions: 6
+    replication_factor: 3
+    config:
+      retention.ms: "2592000000"       # 30 days
+      cleanup.policy: "compact"        # Keep latest per key
+
+  - name: learning.path.generated
+    partitions: 6
+    replication_factor: 3
+    config:
+      retention.ms: "2592000000"
+      cleanup.policy: "delete"
+
+  # ── Dead Letter Queues ───────────────────────────────────
+  - name: dlq.ai-worker
+    partitions: 3
+    replication_factor: 3
+    config:
+      retention.ms: "604800000"        # 7 days for debugging
+      cleanup.policy: "delete"
+
+  - name: dlq.cv-analyzer
+    partitions: 3
+    replication_factor: 3
+    config:
+      retention.ms: "604800000"
+      cleanup.policy: "delete"

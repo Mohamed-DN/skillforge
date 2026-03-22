@@ -1,0 +1,93 @@
+# ============================================================
+# Megaproject — Local Development Stack
+# ============================================================
+# Usage: docker compose -f infra/docker/docker-compose.yml up -d
+# ============================================================
+
+version: "3.9"
+
+services:
+  # ── Database ─────────────────────────────────────────────
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: megaproject-postgres
+    environment:
+      POSTGRES_DB: megaproject
+      POSTGRES_USER: megaproject
+      POSTGRES_PASSWORD: megaproject_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U megaproject"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Enable pgvector extension ────────────────────────────
+  postgres-init:
+    image: timescale/timescaledb:latest-pg16
+    container_name: megaproject-postgres-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "PGPASSWORD=megaproject_dev psql -h postgres -U megaproject -d megaproject -c 'CREATE EXTENSION IF NOT EXISTS vector;'"
+    restart: "no"
+
+  # ── Event Bus (Redpanda) ─────────────────────────────────
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: megaproject-redpanda
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --kafka-addr=PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr=0.0.0.0:8082
+      - --advertise-pandaproxy-addr=localhost:8082
+      - --schema-registry-addr=0.0.0.0:8081
+    ports:
+      - "9092:9092"    # Kafka API
+      - "8081:8081"    # Schema Registry
+      - "8082:8082"    # HTTP Proxy
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+
+  # ── Redpanda Console (UI) ───────────────────────────────
+  redpanda-console:
+    image: redpandadata/console:latest
+    container_name: megaproject-redpanda-console
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BROKERS: redpanda:29092
+      SCHEMA_REGISTRY_URL: http://redpanda:8081
+    ports:
+      - "8080:8080"
+
+  # ── Object Storage (MinIO) ──────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: megaproject-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: megaproject
+      MINIO_ROOT_PASSWORD: megaproject_dev
+    ports:
+      - "9000:9000"    # S3 API
+      - "9001:9001"    # Console
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  redpanda_data:
+  minio_data:

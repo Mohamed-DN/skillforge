@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package megaproject.events;
+
+import "google/protobuf/timestamp.proto";
+
+// ============================================================
+// Common
+// ============================================================
+
+message EventMetadata {
+  string event_id = 1;          // UUID, unique per event
+  string event_type = 2;        // e.g., "UserAnsweredQuestion"
+  string source_service = 3;    // e.g., "api-gateway"
+  google.protobuf.Timestamp timestamp = 4;
+  int32 version = 5;            // schema version
+  string correlation_id = 6;    // for tracing across services
+}
+
+// ============================================================
+// User Events
+// ============================================================
+
+message UserRegistered {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string email = 3;
+  string full_name = 4;
+  string career_goal = 5;
+  string current_role = 6;
+}
+
+// ============================================================
+// Assessment Events
+// ============================================================
+
+message UserAnsweredQuestion {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string assessment_id = 3;
+  string question_id = 4;
+  string user_answer = 5;
+  bool is_correct = 6;
+  int32 response_time_ms = 7;
+  string domain = 8;
+  string difficulty = 9;
+  bool is_stealth = 10;
+}
+
+message AssessmentCompleted {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string assessment_id = 3;
+  int32 total_questions = 4;
+  int32 correct_answers = 5;
+  float score_percentage = 6;
+  int32 total_time_ms = 7;
+}
+
+// ============================================================
+// CV Events
+// ============================================================
+
+message CVUploaded {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string file_path = 3;         // S3 object key
+  string file_type = 4;         // "pdf", "docx"
+  int64 file_size_bytes = 5;
+}
+
+message CVAnalyzed {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  repeated string extracted_skills = 3;
+  int32 experience_years = 4;
+  string current_role = 5;
+  string seniority_level = 6;
+  float analysis_confidence = 7;
+}
+
+// ============================================================
+// AI Processing Events
+// ============================================================
+
+message CompetencyVectorUpdated {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string domain = 3;
+  float new_confidence = 4;
+  float previous_confidence = 5;
+  string triggered_by_event_id = 6;
+}
+
+message LearningPathGenerated {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string path_id = 3;
+  int32 path_version = 4;
+  string generated_by_model = 5;    // which LLM generated it
+}
