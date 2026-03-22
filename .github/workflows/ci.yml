@@ -24,6 +24,7 @@ jobs:
           - services/user-profile-service
           - services/cv-analyzer
           - services/notification-service
+          - services/career-advisor-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -77,6 +78,7 @@ jobs:
           - services/user-profile-service
           - services/cv-analyzer
           - services/notification-service
+          - services/career-advisor-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -143,6 +145,8 @@ jobs:
           - service: cv-analyzer
             containerfile: Containerfile.python-worker
           - service: notification-service
+            containerfile: Containerfile.python-service
+          - service: career-advisor-service
             containerfile: Containerfile.python-service
     steps:
       - uses: actions/checkout@v4

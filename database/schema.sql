@@ -340,3 +340,126 @@ CREATE TABLE communication_profiles (
     updated_at      TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id)
 );
+
+-- =============================================================
+-- JOB OFFERS (Career Advisor — saved for analysis)
+-- =============================================================
+CREATE TABLE job_offers (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title           VARCHAR(255) NOT NULL,
+    company         VARCHAR(255),
+    location        VARCHAR(255),
+    salary_min      INTEGER,
+    salary_max      INTEGER,
+    currency        VARCHAR(3) DEFAULT 'EUR',
+    seniority       VARCHAR(50),                       -- junior, mid, senior, lead
+    raw_text        TEXT NOT NULL,                      -- original job posting
+    required_skills TEXT[],                             -- AI-extracted
+    nice_to_have    TEXT[],                             -- AI-extracted
+    soft_skills     TEXT[],                             -- AI-extracted
+    match_score     FLOAT,                             -- 0.0-1.0 match with user
+    application_status VARCHAR(30) DEFAULT 'saved',    -- saved, applied, interview, offer, rejected
+    ai_analysis     JSONB,                             -- full AI analysis result
+    applied_at      TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_job_offers_user ON job_offers(user_id, created_at DESC);
+CREATE INDEX idx_job_offers_status ON job_offers(user_id, application_status);
+
+-- =============================================================
+-- JOB SKILL GAPS (per job offer, what the user needs to learn)
+-- =============================================================
+CREATE TABLE job_skill_gaps (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    job_offer_id    UUID NOT NULL REFERENCES job_offers(id) ON DELETE CASCADE,
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    skill_name      VARCHAR(100) NOT NULL,
+    user_level      FLOAT DEFAULT 0.0,                 -- 0.0-1.0 current user level
+    required_level  FLOAT DEFAULT 0.5,                 -- 0.0-1.0 job requirement
+    gap_severity    VARCHAR(20),                        -- low, medium, high, critical
+    priority        INTEGER DEFAULT 0,                  -- learning priority order
+    study_hours_est INTEGER,                            -- estimated hours to close gap
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_gaps_job ON job_skill_gaps(job_offer_id);
+CREATE INDEX idx_gaps_user ON job_skill_gaps(user_id);
+
+-- =============================================================
+-- STUDY PLANS (AI-generated learning plans for job targets)
+-- =============================================================
+CREATE TABLE study_plans (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    job_offer_id    UUID REFERENCES job_offers(id) ON DELETE SET NULL,
+    plan_type       VARCHAR(30) DEFAULT '30_day',      -- 30_day, 60_day, custom
+    plan_data       JSONB NOT NULL,                    -- structured plan (weeks, days, tasks)
+    total_hours     INTEGER,                           -- estimated total study hours
+    generated_by    VARCHAR(100),                      -- which LLM model
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_study_plans_user ON study_plans(user_id);
+
+-- =============================================================
+-- PEER INTERVIEWS (Matching users for mock interviews)
+-- =============================================================
+CREATE TABLE peer_interviews (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    interviewer_id  UUID NOT NULL REFERENCES users(id),
+    interviewee_id  UUID NOT NULL REFERENCES users(id),
+    topic           VARCHAR(100) NOT NULL,
+    scheduled_at    TIMESTAMPTZ NOT NULL,
+    status          VARCHAR(30) DEFAULT 'scheduled',   -- scheduled, completed, cancelled
+    feedback_score  INTEGER,                           -- 1 to 5
+    ai_transcript   JSONB,                             -- AI analysis of the voice transcript
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT different_users CHECK (interviewer_id != interviewee_id)
+);
+
+CREATE INDEX idx_peer_interviews_users ON peer_interviews(interviewer_id, interviewee_id);
+
+-- =============================================================
+-- QUESTS & BOUNTIES (Gamified real-world challenges)
+-- =============================================================
+CREATE TABLE quests (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title           VARCHAR(255) NOT NULL,
+    description     TEXT,
+    domain          VARCHAR(100) NOT NULL,             -- e.g., 'python', 'architecture'
+    difficulty      VARCHAR(50),                       -- easy, medium, hard, epic
+    xp_reward       INTEGER DEFAULT 50,
+    skill_unlocked  VARCHAR(100),                      -- branch of the skill tree
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE user_quests (
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    quest_id        UUID NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
+    status          VARCHAR(30) DEFAULT 'in_progress', -- in_progress, completed, failed
+    completion_data JSONB,                             -- flexible submission details/code execution
+    completed_at    TIMESTAMPTZ,
+    PRIMARY KEY (user_id, quest_id)
+);
+
+-- =============================================================
+-- UNIVERSAL NOSQL STORE (Postgres JSONB for dynamic schema)
+-- =============================================================
+-- Used for adaptive UI layouts, mental/burnout state, and dynamic 
+-- gamification objects (skill tree layout) without requiring schema migrations.
+CREATE TABLE user_dynamic_state (
+    user_id         UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    ui_preferences  JSONB DEFAULT '{}',                -- dynamic adaptive layouts per user
+    gamification    JSONB DEFAULT '{"xp": 0, "level": 1, "unlocked_nodes": []}', 
+    mental_state    JSONB DEFAULT '{"burnout_risk": 0.0, "last_break": null}', 
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- GIN index allows high-performance queries inside the JSONB documents!
+CREATE INDEX idx_user_state_gamification ON user_dynamic_state USING GIN (gamification);

@@ -1,132 +1,83 @@
-# 🤖 AI Context — SkillForge
+# 🤖 AI Context — SkillForge (Next-Gen Version)
 
 > **This file is for AI assistants** (Claude, Gemini, GPT, Copilot, etc.).
-> It provides the context needed to understand, navigate, and contribute to this project.
+> It provides the core context needed to understand the brilliant vision of this project and contribute effectively.
 
 ---
 
-## Project Identity
+## 🌟 The Vision: "The Holy Grail of EdTech"
+
+SkillForge is not just another LMS (Learning Management System). It is a **predictive, adaptive AI career engine** that uses stealth profiling, gamification, and market intelligence to guide users to their maximum potential. 
+
+1. **Passive Intelligence**: The system learns about the user through *every* interaction—how fast they answer, their vocabulary in chat, their code syntax.
+2. **Hidden Skill Tree**: A video-game style tech tree. Users start with visible branches for their current role, but hidden branches (like *System Design* or *Cloud Architecture*) illuminate as the AI detects latent talents.
+3. **Market-Driven Nudging**: The system scrapes the job market. If Kubernetes engineers are in high demand and the user has a 70% vector match, the AI subtly injects Kubernetes "stealth questions" into their daily learning to nudge them towards that high-paying career.
+4. **Voice & Peer Challenges**: We don't just do text. We do AI-driven Voice Interviews (Web Speech API) to grade soft skills and confidence, and we match users peer-to-peer for mock interviews based on complementary skill gaps.
+
+---
+
+## 🏛️ Project Identity & Tech Stack
 
 - **Name**: SkillForge
-- **Type**: AI-powered career learning platform (SaaS, B2C)
-- **Stage**: Early development (scaffolding complete, services not yet implemented)
-- **Architecture**: Event-driven microservices on Kubernetes
-- **Container Engine**: Podman (rootless, daemonless — chosen for bank-level security)
-- **Primary Language**: Python 3.12+
-- **Framework**: FastAPI (all services)
-- **Key Book Reference**: *"Designing Data-Intensive Applications"* v2 (Kleppmann & Riccomini)
+- **Architecture**: Event-driven microservices (12 services) on Kubernetes
+- **Container Engine**: Podman (rootless, daemonless — bank-level security)
+- **Primary Language**: Python 3.12+ (FastAPI)
+- **Key Book Reference**: *"Designing Data-Intensive Applications"* v2 
+- **Database Philosophy (The Hybrid Absolute)**:
+  - We use **PostgreSQL** as our universal data engine.
+  - **Relational (ACID)**: For users, billing, auth.
+  - **Vector (pgvector)**: For AI RAG, semantic search, and user competency vectors (1536-dim).
+  - **Time-Series (TimescaleDB)**: For tracking skill progression and chat histories over time.
+  - **NoSQL / Flexible (JSONB)**: For deeply nested, highly dynamic unstructured data (active hours, learning styles, complex AI analysis reports, gamification states) avoiding rigid schema changes.
 - **Security Level**: Bank-grade (mTLS, encryption at rest + transit, GDPR, audit logs)
-- **GitHub**: https://github.com/Mohamed-DN/skillforge
 
 ---
 
-## Architecture Overview
+## 🧩 Architecture Overview (12 Microservices)
 
-### Services (all in `/services/`)
-
-| Service | Port | Role | Status |
-|---------|------|------|--------|
-| `api-gateway` | 8000 | Public REST API, request validation, event publishing | 🔴 Not started |
-| `auth-service` | 8005 | OAuth2, JWT (RS256), bcrypt, RBAC, MFA, GDPR | 🔴 Not started |
-| `billing-service` | 8006 | Stripe, subscriptions (Free/Pro/Enterprise), invoices | 🔴 Not started |
-| `llm-gateway` | 8001 | LiteLLM model router (DeepSeek/Gemini/OpenAI) | 🔴 Not started |
-| `ai-worker` | — | Redpanda consumer, AI processing, pgvector writes | 🔴 Not started |
-| `assessment-engine` | 8002 | Adaptive quiz generation with RAG | 🔴 Not started |
-| `user-profile-service` | 8003 | User domain, competency vectors | 🔴 Not started |
-| `cv-analyzer` | — | CV parsing worker (PDF/DOCX → skills) | 🔴 Not started |
-| `notification-service` | 8004 | Push/email/in-app notifications | 🔴 Not started |
-
-### Infrastructure
-
-| Component | Technology | Config Location |
-|-----------|-----------|----------------|
-| Container Engine | Podman (rootless) | `infra/containers/` |
-| Event Bus | Redpanda (Kafka-compatible) | `infra/helm/redpanda-values.yaml` |
-| Database | PostgreSQL + pgvector + TimescaleDB | `database/` |
-| Cache/Sessions | Redis (or Valkey) | `infra/helm/redis-values.yaml` |
-| Autoscaler | KEDA | `infra/helm/keda-values.yaml` |
-| Object Storage | MinIO (S3-compatible) | `infra/terraform/` |
-| Secrets | HashiCorp Vault | `infra/helm/vault-values.yaml` |
-| Observability | OpenTelemetry + Prometheus + Grafana | `observability/` |
-| Image Scanning | Trivy | `.github/workflows/ci.yml` |
-
-### Communication Patterns
-
-- **Sync**: REST (FastAPI) for user-facing API calls
-- **Async**: Redpanda events for all background processing
-- **Pattern**: Event Sourcing + CQRS + Transactional Outbox
-- **Serialization**: Protobuf for inter-service events, JSON for REST API
-- **Security**: mTLS between services, TLS 1.3 external, JWT for auth
+| Service | Port | Role |
+|---------|------|------|
+| `api-gateway` | 8000 | Public REST API, routing, JWT validation |
+| `auth-service` | 8005 | OAuth2, RS256 JWT, bcrypt, MFA, RBAC |
+| `billing-service` | 8006 | Stripe subscriptions, PCI-compliant billing |
+| `chat-service` | 8007 | WebSocket real-time AI conversation, streaming responses |
+| `llm-gateway` | 8001 | LiteLLM abstraction layer (routes to DeepSeek/Gemini/OpenAI) |
+| `ai-worker` | — | Redpanda consumer, handles async RAG & data derivation |
+| `user-intelligence-worker` | — | **The Brain**: Analyzes chats/quizzes to build psychological & skill profiles |
+| `assessment-engine` | 8002 | Generates adaptive quizzes with RAG |
+| `career-advisor-service` | 8008 | Compares user skills to job offers, generates 30-day study plans |
+| `user-profile-service` | 8003 | CRUD for user identity, goals, and core domain |
+| `cv-analyzer` | — | CV parsing worker (PDF/DOCX extraction) |
+| `notification-service` | 8004 | Push/email notifications, dopamine-driven engagement |
 
 ---
 
-## Key Design Decisions
+## ⚙️ Key System Mechanics
 
-1. **Podman over Docker** — Rootless by default, no daemon, K8s-native, 100% free, bank-level security
-2. **Kappa Architecture** — No separate batch layer. All processing through Redpanda stream consumers
-3. **LLM Gateway abstraction** — All AI calls go through LiteLLM. Never call LLM APIs directly
-4. **Idempotent consumers** — Every event consumer must be idempotent (use event_id for deduplication)
-5. **Transactional outbox** — Events written to DB in same transaction as state changes
-6. **RS256 JWT** — Asymmetric signing: private key signs, public key verifies (zero-trust between services)
-7. **Stripe for payments** — PCI-compliant, never touch card data directly
-8. **GDPR by design** — Consent records, right to erasure, data portability built-in
-9. **Competency vectors** — User skills as pgvector embeddings (1536-dim), updated incrementally
-10. **Schema evolution** — All event schemas use Protobuf with backward/forward compatibility
+1. **Kappa Architecture (Stream First)**: Every interaction (button click, chat message, quiz answer) is an immutable event published to **Redpanda**. Workers consume these events, process them, and update Postgres in real-time.
+2. **Idempotency**: All workers track processed `event_id`s in Redis/Postgres to ensure exactly-once processing semantics.
+3. **LLM Agnosticism**: We never hardcode OpenAI or Gemini. Everything goes through `llm-gateway` (LiteLLM) for intelligent fallback, cost routing, and prompt caching.
+4. **Zero-Trust Security**: No service trusts another by default. Requests are verified via signed JWTs (RS256), and Kubernetes network policies block default traffic. No credentials ever exist in the codebase (Vault).
 
 ---
 
-## Conventions
-
-### Code Style
-- **Python**: Black formatter (line 100), isort imports, mypy strict, ruff linter
-- **Naming**: snake_case (Python), kebab-case (service dirs), SCREAMING_SNAKE (env vars)
-- **Commits**: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `infra:`)
-
-### Branch Strategy
-- `main` — stable, deployable
-- `develop` — integration branch
-- `feat/<name>`, `fix/<name>` — feature/fix branches
-
-### Service Structure
-```
-services/<name>/
-├── src/
-│   ├── __init__.py
-│   ├── main.py          # FastAPI app or worker entrypoint
-│   ├── config.py         # Pydantic Settings
-│   ├── models.py         # SQLAlchemy/Pydantic models
-│   ├── routes.py         # API routes (if HTTP service)
-│   ├── events.py         # Event producers/consumers
-│   └── services.py       # Business logic
-├── tests/
-├── Containerfile         # OCI-compatible (works with Podman)
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Current Progress
+## 🚀 Current Progress
 
 > **Last updated**: 2026-03-22
 
-- ✅ Repository scaffolding complete (9 services)
-- ✅ Architecture documentation (README, AI_CONTEXT, ROADMAP, PERSONAL_GUIDE)
-- ✅ Database schema with pgvector + TimescaleDB + outbox + auth + billing tables
-- ✅ Protobuf event schemas
-- ✅ Podman-compose for local dev
-- 🔴 No service code implemented yet
-- 🔴 No K8s manifests created yet
-- 🔴 No CI/CD pipelines active yet
-
-**Next milestone**: Phase 1 — Database schema + Auth Service skeleton
+- ✅ **Scaffolding Complete**: All 12 services created.
+- ✅ **Database Complete**: Schema with 22 tables (including NoSQL `JSONB` columns for insights and plans, `pgvector`, `TimescaleDB` hypertables).
+- ✅ **Events Complete**: Protobuf schema (`events.proto`) with 25 event types spanning users, auth, chat, AI, and career modules.
+- ✅ **CI/CD Active**: GitHub Actions matrix configured for all 12 services, including Trivy security scanning.
+- ✅ **Internal Docs**: `PERSONAL_GUIDE.md` completely documents how to build the platform from zero to prod.
+- 🟡 **Implementation Phase**: Developing core business logic inside the microservice endpoints.
 
 ---
 
-## How to Update This File
+## 💡 How to Help
 
-When implementing new features:
-1. Update the service status table above
-2. Update "Current Progress"
-3. Add any new design decisions
-4. If adding a new service, add it to the services table
+When asked to implement a feature:
+1. Prefer event-driven approaches (publish event to Redpanda -> consume in worker) over synchronous API calls where possible.
+2. Use Postgres `JSONB` for unstructured metadata to keep schemas flexible.
+3. Keep security in mind: use absolute paths, secure dependencies, and validate all inputs.
+4. If a feature interacts with the AI, route it through the `llm-gateway`, never directly to an LLM provider.

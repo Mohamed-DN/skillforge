@@ -213,6 +213,33 @@
 
 ---
 
+---
+
+## 🌟 Priority 8: The Brilliance Tier (Platform Differentiators)
+
+### 8.1 Peer-to-Peer Mock Interviews
+- [ ] Matchmaking algorithm based on complementary skill gaps (e.g., strong backend + weak frontend meets strong frontend + weak backend)
+- [ ] WebRTC logic for live audio/video communication
+- [ ] Integrated collaborative code editor during the interview
+- [ ] AI runs in the background to transcribe and analyze the interview
+- [ ] Automated constructive feedback generation based on peer grading + AI analysis
+
+### 8.2 Quest & Bounty System (Real-World Application)
+- [ ] Scrape "Good First Issues" from GitHub open-source projects
+- [ ] Package them as "Bounties" inside the platform
+- [ ] Users earn XP, unlock skill tree branches, and build a real portfolio
+- [ ] AI reviews the PR draft before the user officially submits it to the repo
+- [ ] Leaderboards based on successfully merged bounties
+
+### 8.3 NoSQL/JSONB Hyper-Personalization
+- [ ] Shift rigid UI layouts to dynamic templates stored in `user_dynamic_state.ui_preferences`
+- [ ] AI dynamically reconfigures the UI based on learning style (visual learners get more diagrams, text learners get deep explanations)
+- [ ] Mental State / Burnout Detection: AI worker analyzes study patterns to detect fatigue
+- [ ] If burnout detected → AI forces a "light day" (e.g., just watch a 5-min video instead of a hard quiz)
+- [ ] Update gamification engine to run entirely out of JSONB state (easy schema iteration without migrations)
+
+---
+
 ## 📋 Technical Debt Tracker
 
 | Item | Priority | Status |

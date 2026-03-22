@@ -183,3 +183,80 @@ message PaymentFailed {
   int32 retry_count = 5;
 }
 
+// ============================================================
+// Career Advisor Events
+// ============================================================
+
+message JobOfferAnalyzed {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string job_offer_id = 3;
+  string job_title = 4;
+  string company = 5;
+  float match_score = 6;
+  int32 skills_matched = 7;
+  int32 skills_missing = 8;
+}
+
+message SkillGapIdentified {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string job_offer_id = 3;
+  string skill_name = 4;
+  float user_level = 5;
+  float required_level = 6;
+  string gap_severity = 7;     // low, medium, high, critical
+}
+
+message StudyPlanGenerated {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string plan_id = 3;
+  string job_offer_id = 4;
+  string plan_type = 5;        // 30_day, 60_day
+  int32 total_hours = 6;
+}
+
+message CVOptimized {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string job_offer_id = 3;
+  int32 suggestions_count = 4;
+  int32 keywords_added = 5;
+}
+
+// ============================================================
+// Platform Brilliance & Gamification Events
+// ============================================================
+
+message PeerInterviewScheduled {
+  EventMetadata metadata = 1;
+  string interviewer_id = 2;
+  string interviewee_id = 3;
+  string interview_id = 4;
+  string topic = 5;
+}
+
+message PeerInterviewCompleted {
+  EventMetadata metadata = 1;
+  string interviewer_id = 2;
+  string interviewee_id = 3;
+  string interview_id = 4;
+  int32 feedback_score = 5;
+}
+
+message QuestCompleted {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string quest_id = 3;
+  string domain = 4;
+  int32 xp_earned = 5;
+  string skill_unlocked = 6;
+}
+
+message UserStateUpdated {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string update_type = 3;      // gamification, mental_state, ui_pref
+  string trigger_source = 4;   // e.g., "ai_burnout_detection"
+}
