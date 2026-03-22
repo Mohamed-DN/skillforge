@@ -1024,10 +1024,10 @@ Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**
 | Componente | 🛠️ Sviluppo (Costo Zero) | 🚀 Produzione (Miglior Compromesso Costo/SLA) | Perché questa scelta in Prod? |
 |-------------|-------------------------|---------------------------------------------|-------------------------------|
 | **Compute / K8s** | K3s / Minikube in locale (o VPS nuda da €5) | **DigitalOcean DOKS** o **Linode LKE** (~€60/mese) | Non vuoi gestire il control plane K8s a mano. DOKS automatizza, ma costa 1/3 di AWS EKS. |
-| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Managed Database** (es. Neon.tech o DO, ~€30-50/mese) | Hai bisogno di Backup automatici e Point-In-Time-Recovery. I dati utenti sono sacri. |
+| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Self-Hosted PostgreSQL (Dedicated Node/StatefulSet)** | **Costo Zero**. Essendo tu un DBA, pagare servizi gestiti non aggiunge valore reale. Lo gestirai in autonomia. |
 | **Event Bus (Redpanda)**| Container locale | **Self-Hosted Redpanda** (su nodi worker DOKS) | Mantiene le latenze al minimo e fa risparmiare centinaia di euro rispetto a Confluent Cloud. |
 | **Storage (Object)** | MinIO locale | **Self-Hosted MinIO** (su nodi worker DOKS) | AWS S3 scala nei costi brutalmente. MinIO "S3-compatibile" su K8s è gratis e velocissimo. |
-| **Intelligenza Artificiale** | Modelli Open Source Locali (Llama-3) o Tier Gratuiti | **Router Ibrido (LiteLLM)**: GPT-4o (complessi) / DeepSeek (10x più economico per task semplici) | Massimizza la qualità dell'app senza dissanguare le finanze per chiamate API ripetitive. |
+| **Intelligenza Artificiale** | Modelli Open Source Locali (Llama-3) o Tier Gratuiti | **Router Ibrido (LiteLLM)**: GPT-4o (complessi) / DeepSeek (10x più economico per task semplici) | **Alto Valore**. Massimizza la qualità dell'app senza dissanguare le finanze per chiamate ripetitive. |
 
 ---
 
@@ -1038,11 +1038,11 @@ Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**
 | Voce di Costo | Dettaglio tecnico | Costo/Mese |
 |---------------|-------------------|------------|
 | **Compute K8s** | DigitalOcean DOKS (3 nodi, 4GB RAM) + Load Balancer | ~€ 80,00 |
-| **Database managed** | Cluster PostgreSQL gestito con backup giornaliero | ~€ 30,00 |
+| **Database** | PostgreSQL Self-Hosted sul cluster K8s / Nodo VPS | **€ 0,00** |
 | **Dominio & DNS** | Cloudflare (Free) + rinnovo dominio | ~€ 2,00 |
 | **LLM Inference** | Mix di DeepSeek (90%) e Claude (10%) | ~€ 15,00 |
 | **Transactional** | Commissioni Stripe (~2.9% + €0.25 a transazione) | *Variabile* |
-| **Totale Spese Fisse** | Infrastruttura rock-solid per servire 1K utenti | **~€ 127,00** |
+| **Totale Spese Fisse** | Infrastruttura rock-solid per servire 1K utenti | **~€ 97,00** |
 
 #### 📈 Ricavi (Revenue)
 *Tasso di conversione conservativo del 5% su 1.000 utenti gratuiti.*
@@ -1057,14 +1057,14 @@ Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**
 
 ```text
   Ricavi Netti (dopo le fee bancarie):   € 666,02
-- Spese Prod Infrastruttura & Cloud:     € 127,00
+- Spese Prod Infrastruttura & Cloud:     €  97,00
 -------------------------------------------------
-= Utile Operativo (EBITDA):              € 539,02 al mese
+= Utile Operativo (EBITDA):              € 569,02 al mese
 ```
-*Margine di profitto netto: **81%*** 🚀
+*Margine di profitto netto: **85%*** 🚀
 
 **Con 10.000 utenti attivi (500 paganti):**
-Scalare DOKS aggiungendo nodi e database più grandi porterà il costo a circa **€300/mese**, ma i ricavi netti saranno di **€6.660/mese**. Profitto: **~€ 6.300/mese**. Questo è il compromesso perfetto tra notti tranquille (database e K8s gestiti) e margini da SaaS puro!
+Scalare DOKS aggiungendo nodi porterà il costo a circa **€250/mese**, ma i ricavi netti saranno di **€6.660/mese**. Profitto: **~€ 6.410/mese**. Questo è puro EBITDA massimizzando le tue skill da DBA!
 
 
 ---
