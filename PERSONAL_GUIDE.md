@@ -46,33 +46,44 @@ Un'app dove:
 
 ---
 
-## 🔧 PASSO 0: Prepara il Tuo Mac
+## 🔧 PASSO 0: Prepara il Server (RedHat / Oracle Linux)
 
-Prima di tutto, installa tutti gli strumenti necessari.
+Prima di tutto, installa tutti gli strumenti necessari sul tuo server Linux.
 
 ```bash
-# 1. Installa Homebrew (il package manager di macOS)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# 1. Aggiorna il sistema
+sudo dnf update -y
 
-# 2. Installa tutti gli strumenti
-brew install python@3.12 podman podman-compose kubectl helm minikube git
+# 2. Installa Python, Git e gli strumenti base
+sudo dnf install -y python3.12 git nano curl wget
 
-# 3. Inizializza Podman (crea la VM Linux per i container)
-podman machine init --cpus=4 --memory=8192
-podman machine start
+# 3. Installa Podman (nativo su RedHat/Oracle Linux, non serve il demone root!)
+sudo dnf install -y podman podman-docker podman-compose
 
-# 4. Verifica che tutto funzioni
-podman --version        # Container engine (sostituto di Docker)
+# 4. Installa gli strumenti Kubernetes (kubectl, helm, minikube/k3s)
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# helm
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh && ./get_helm.sh
+
+# minikube (o usa k3s per server leggeri)
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# 5. Verifica che tutto funzioni
+podman --version        # Container engine (nativo e rootless!)
 python3.12 --version    # Linguaggio di programmazione
 kubectl version --client # Kubernetes CLI
 helm version            # Package manager per K8s
-minikube version        # Cluster K8s locale
 
-# 5. Clona il tuo repo
+# 6. Clona il tuo repo
 git clone https://github.com/Mohamed-DN/skillforge.git
 cd skillforge
 
-# 6. Copia il file .env
+# 7. Copia il file .env
 cp .env.example .env
 # → Apri .env e inserisci le tue chiavi API (DeepSeek, OpenAI, Google, Stripe)
 ```
