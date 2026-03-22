@@ -1015,28 +1015,56 @@ trivy image skillforge/api-gateway:latest
 
 ---
 
-## 💰 Matematica del Business
+## 💰 Strategia "Zero-Cost" & Financial Projections
 
-### Costi (per 1.000 utenti attivi)
+Il progetto è architettato per abbattere i costi usando tecnologie **100% Open Source** self-hosted al posto di costosi servizi managed Cloud (AWS/GCP), permettendo di avere margini di profitto enormi.
 
-| Voce | Costo/mese |
-|------|-----------|
-| Cloud K8s (3 nodi) | ~€100-150 |
-| PostgreSQL managed | ~€30-50 |
-| LLM API (DeepSeek) | ~€20-50 |
-| Dominio + CDN | ~€10 |
-| **Totale** | **~€160-260** |
+### 🛡️ L'Arsenale Open Source (Come abbattiamo le spese)
+1. **Compute**: Niente EKS/GKE (che costano $70/mese solo per il control plane). Usiamo **K3s / Minikube** su VPS nudi (es. Hetzner o OVH).
+2. **Database**: Niente AWS RDS. Facciamo self-hosting di **PostgreSQL + pgvector** in un pod Kubernetes con volumi persistenti.
+3. **Event Bus**: Niente Confluent Cloud ($$$). Usiamo **Redpanda**, l'alternativa C++ a Kafka, leggerissima e gratuita.
+4. **Intelligenza Artificiale**: Niente lock-in con OpenAI. Tramite **LiteLLM**, instraderemo il traffico sui modelli più economici del momento (es. DeepSeek-V3 a $0.14 per 1M token) o modelli locali (Llama-3 via vLLM) in futuro.
+5. **Storage**: Niente S3. Usiamo **MinIO** orchestrato nel cluster.
+6. **Container Engine**: Niente Docker Desktop (a pagamento per aziende). Usiamo **Podman** nativo su RedHat.
 
-### Ricavi (per 1.000 utenti)
+---
 
-| Conversione | Ricavo/mese |
-|-------------|-------------|
-| 50 utenti Pro (€9.99) | €499 |
-| 10 utenti Enterprise (€29.99) | €299 |
-| **Totale** | **€798** |
-| **Profitto** | **~€540/mese** |
+### 📊 Modello Finanziario (Scenario: 1.000 Utenti Attivi Mensili)
 
-Con 10.000 utenti: **~€5.400/mese di profitto**.
+#### 📉 Spese Operative (OPEX)
+*Approccio Bare Metal / VPS (es. Hetzner)*
+
+| Voce di Costo | Dettaglio tecnico | Costo/Mese |
+|---------------|-------------------|------------|
+| **Infrastruttura** | 3 x VPS (4 CPU, 8GB RAM, 80GB NVMe) in cluster K3s | ~€ 25,00 |
+| **Storage Rete** | 100GB Block Storage per Database e MinIO | ~€ 5,00 |
+| **Dominio & DNS** | Cloudflare (Free) + rinnovo dominio annuo | ~€ 2,00 |
+| **LLM Inference** | Stimando 10M token in/out su DeepSeek/Gemini Pro | ~€ 5,00 |
+| **Transactional** | Commissioni Stripe (~2.9% + €0.25 a transazione) | *Variabile* |
+| **Totale Spese Fisse** | Per servire stabilmente fino a 1K/2K utenti | **~€ 37,00** |
+
+#### 📈 Ricavi (Revenue)
+*Tasso di conversione conservativo del 5% su 1.000 utenti gratuiti.*
+
+| Tier | Prezzo | Iscritti | Ricavo Lordo | Netto (dopo Stripe -3%) |
+|------|--------|----------|--------------|-------------------------|
+| **Pro** | € 9,99/mese | 40 utenti (4%) | € 399,60 | € 377,62 |
+| **Enterprise** | € 29,99/mese | 10 utenti (1%) | € 299,90 | € 288,40 |
+| **Totale** | | **50 utenti paganti** | **€ 699,50** | **€ 666,02** |
+
+#### 💎 Profit & Loss (P&L) Mensile
+
+```text
+  Ricavi Netti (dopo le fee bancarie):   € 666,02
+- Spese Infrastruttura & Cloud:          €  37,00
+-------------------------------------------------
+= Utile Operativo (EBITDA):              € 629,02 al mese
+```
+*Margine di profitto netto: **94.4%*** 🚀
+
+**Con 10.000 utenti attivi (500 paganti):**
+I costi di server salirebbero a circa €150/mese (aggiungendo nodi al cluster K8s), ma i ricavi netti volerebbero a **€ 6.660/mese**. Profitto: **~€ 6.500/mese**. La matematica dell'Open Source Cloud-Native è imbattibile.
+
 
 ---
 
