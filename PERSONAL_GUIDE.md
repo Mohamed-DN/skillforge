@@ -1006,12 +1006,46 @@ trivy image skillforge/api-gateway:latest
 #       → AI Worker (3200ms)
 #         → LLM Gateway (3100ms)
 #           → DeepSeek API (3000ms)
-#         → PostgreSQL write (50ms)
 # Tutto visibile in Grafana!
 
 # Prometheus: metriche (quante richieste/sec? qual è la latenza p99?)
 # Grafana: dashboard per vedere tutto
 ```
+
+---
+
+## 🚀 PASSO 16: La Vera Produzione (Come implementare il Full-Stack HA)
+
+Essere un DBA non basta più: oggi l'infrastruttura è "Code". Ecco **esattamente come** implementerai l'Alta Affidabilità (HA) su Kubernetes quando passeremo dal laptop al Cloud:
+
+### 1. K8s Compute (HPA - Horizontal Pod Autoscaling)
+Per ogni microservizio (es. `auth-service`), non crei un singolo Pod, ma un `Deployment` configurato per scalare in base alla CPU/RAM.
+```bash
+# Esempio: Crea l'autoscaler per il servizio di Auth.
+# Scala da 3 a 10 repliche se l'uso medio della CPU supera l'80%
+kubectl autoscale deployment auth-service --cpu-percent=80 --min=3 --max=10
+```
+
+### 2. Database HA (PostgreSQL) — La Via del DBA Cloud-Native
+Non farai scrip bash manuali per la replica. Userai l'operatore **CloudNativePG** (creato da EnterpriseDB), lo standard assoluto per PostgreSQL su K8s.
+- Installa l'operatore nel cluster.
+- Crea un file `cluster.yaml` con `instances: 3`. L'operatore tirerà su 1 Primario e 2 Standby (Replica Asincrona/Sincrona) e gestirà il **Failover Automatico** eleggendo un nuovo leader in millisecondi tramite l'API di Kubernetes.
+- Integrato nativamente con i volumi persistenti (PVC) dei 3 nodi.
+
+### 3. Event Bus HA (Redpanda Raft Consensus)
+Distribuiamo Redpanda con Helm per garantire tolleranza ai fallimenti di rete o di nodo.
+```bash
+# Installa Redpanda sul cluster K8s forzando 3 repliche
+helm repo add redpanda https://charts.redpanda.com
+helm install redpanda redpanda/redpanda --namespace redpanda --create-namespace \
+  --set statefulset.replicas=3
+```
+Grazie al protocollo *Raft*, devi avere dispari (3) broker per raggiungere il quorum. Se 1 nodo host brucia, gli altri 2 continuano a validare i messaggi. Zero downtime.
+
+### 4. Storage HA (MinIO Erasure Coding)
+Userai il **MinIO Kubernetes Operator** per creare un "Tenant" distribuito.
+- Serve un minimo di 4 dischi/volumi montati sui tuoi 3 Nodi K8s.
+- Abilitando l'*Erasure Coding*, i file caricati (es. I CV PDF) vengono frammentati. Anche se perdi 1 server intero (e i suoi dischi), MinIO ricostruisce matematicamente i file dai frammenti rimanenti sugli altri server.
 
 ---
 

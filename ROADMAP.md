@@ -146,12 +146,14 @@
 ## Phase 11: Kubernetes Deployment 🔴
 > *DDIA v2: Ch6 (Replication), Ch7 (Sharding), Ch9 (Distributed Systems)*
 
-- [ ] K8s manifests for all 9 services (Kustomize base/overlays)
-- [ ] Deploy Redpanda, PostgreSQL, Redis via Helm
+- [ ] K8s manifests for all 12 services (Kustomize base/overlays)
+- [ ] Configure Horizontal Pod Autoscaler (HPA) for compute nodes
+- [ ] Deploy PostgreSQL 3-Node HA via CloudNativePG operator
+- [ ] Deploy Redpanda 3-broker cluster via Helm (Raft consensus)
+- [ ] Deploy Distributed MinIO with Erasure Coding
 - [ ] KEDA ScaledObjects (AI Worker, CV Analyzer)
-- [ ] Ingress (NGINX + TLS 1.3)
+- [ ] Multi-replica Ingress (NGINX/Traefik + TLS 1.3) + LB
 - [ ] Network policies (zero-trust)
-- [ ] Test on Minikube/Kind
 
 ---
 
