@@ -1019,19 +1019,15 @@ trivy image skillforge/api-gateway:latest
 
 Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**, ma per scalare in produzione usando il **miglior compromesso tra affidabilità (SLA) e costi operativi**.
 
-### 🛠️ Ambiente Dev / Staging (Costo Zero)
-In fase di sviluppo, sei un "lupo solitario" 100% Open Source:
-1. **Compute**: K3s / Minikube locale o su una VPS nuda da €5/mese (Hetzner).
-2. **Database**: Container PostgreSQL locale. Se si rompe, ricrei.
-3. **Infrastruttura**: Redpanda e MinIO in locale (nessun costo cloud).
-4. **Intelligenza Artificiale**: LiteLLM punta a modelli locali (Llama-3) o API free-tier.
+### ⚖️ Tabella Comparativa: Dev vs Produzione
 
-### 🚀 Ambiente Produzione (Il Miglior Compromesso Costo/Servizio)
-In produzione, i dati dei clienti sono vitali. Ecco dove paghiamo (risparmiando rispetto ai giganti cloud) e dove facciamo self-hosting:
-1. **Compute**: **DigitalOcean Kubernetes (DOKS)** o **Linode LKE** (~€60/mese per 3 nodi). *Perché?* Ti toglie l'incubo di gestire il control plane K8s a mano, bilancia il carico in automatico, ma costa 1/3 di AWS EKS.
-2. **Database**: **Managed PostgreSQL** (es. DigitalOcean o Neon.tech a ~€30-50/mese). *Perché?* Include backup automatici, Point-In-Time-Recovery e Alta Affidabilità. Non vuoi fare il DBA di notte se cade il server.
-3. **Event Bus & Storage (Self-Hosted)**: **Redpanda e MinIO** caricati come StatefulSet sui worker K8s. *Perché?* Confluent Cloud e AWS S3 costano centinaia di euro su grandi scale. Queste tecnologie open source girano benissimo nei nostri cluster.
-4. **Intelligenza Artificiale (Tiered)**: LiteLLM smista. Operazioni complesse (analisi CV) vanno a **GPT-4o/Claude 3.5**. Operazioni ripetitive (parsing chat, UI layout) vanno a **DeepSeek-V3** per tagliare i costi del 90%.
+| Componente | 🛠️ Sviluppo (Costo Zero) | 🚀 Produzione (Miglior Compromesso Costo/SLA) | Perché questa scelta in Prod? |
+|-------------|-------------------------|---------------------------------------------|-------------------------------|
+| **Compute / K8s** | K3s / Minikube in locale (o VPS nuda da €5) | **DigitalOcean DOKS** o **Linode LKE** (~€60/mese) | Non vuoi gestire il control plane K8s a mano. DOKS automatizza, ma costa 1/3 di AWS EKS. |
+| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Managed Database** (es. Neon.tech o DO, ~€30-50/mese) | Hai bisogno di Backup automatici e Point-In-Time-Recovery. I dati utenti sono sacri. |
+| **Event Bus (Redpanda)**| Container locale | **Self-Hosted Redpanda** (su nodi worker DOKS) | Mantiene le latenze al minimo e fa risparmiare centinaia di euro rispetto a Confluent Cloud. |
+| **Storage (Object)** | MinIO locale | **Self-Hosted MinIO** (su nodi worker DOKS) | AWS S3 scala nei costi brutalmente. MinIO "S3-compatibile" su K8s è gratis e velocissimo. |
+| **Intelligenza Artificiale** | Modelli Open Source Locali (Llama-3) o Tier Gratuiti | **Router Ibrido (LiteLLM)**: GPT-4o (complessi) / DeepSeek (10x più economico per task semplici) | Massimizza la qualità dell'app senza dissanguare le finanze per chiamate API ripetitive. |
 
 ---
 
