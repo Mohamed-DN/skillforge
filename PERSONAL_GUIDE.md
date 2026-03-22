@@ -1015,33 +1015,38 @@ trivy image skillforge/api-gateway:latest
 
 ---
 
-## 💰 Strategia "Zero-Cost" & Financial Projections
+## 💰 Strategia Duale: Dev a Costo Zero vs Prod Ibrida
 
-Il progetto è architettato per abbattere i costi usando tecnologie **100% Open Source** self-hosted al posto di costosi servizi managed Cloud (AWS/GCP), permettendo di avere margini di profitto enormi.
+Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**, ma per scalare in produzione usando il **miglior compromesso tra affidabilità (SLA) e costi operativi**.
 
-### 🛡️ L'Arsenale Open Source (Come abbattiamo le spese)
-1. **Compute**: Niente EKS/GKE (che costano $70/mese solo per il control plane). Usiamo **K3s / Minikube** su VPS nudi (es. Hetzner o OVH).
-2. **Database**: Niente AWS RDS. Facciamo self-hosting di **PostgreSQL + pgvector** in un pod Kubernetes con volumi persistenti.
-3. **Event Bus**: Niente Confluent Cloud ($$$). Usiamo **Redpanda**, l'alternativa C++ a Kafka, leggerissima e gratuita.
-4. **Intelligenza Artificiale**: Niente lock-in con OpenAI. Tramite **LiteLLM**, instraderemo il traffico sui modelli più economici del momento (es. DeepSeek-V3 a $0.14 per 1M token) o modelli locali (Llama-3 via vLLM) in futuro.
-5. **Storage**: Niente S3. Usiamo **MinIO** orchestrato nel cluster.
-6. **Container Engine**: Niente Docker Desktop (a pagamento per aziende). Usiamo **Podman** nativo su RedHat.
+### 🛠️ Ambiente Dev / Staging (Costo Zero)
+In fase di sviluppo, sei un "lupo solitario" 100% Open Source:
+1. **Compute**: K3s / Minikube locale o su una VPS nuda da €5/mese (Hetzner).
+2. **Database**: Container PostgreSQL locale. Se si rompe, ricrei.
+3. **Infrastruttura**: Redpanda e MinIO in locale (nessun costo cloud).
+4. **Intelligenza Artificiale**: LiteLLM punta a modelli locali (Llama-3) o API free-tier.
+
+### 🚀 Ambiente Produzione (Il Miglior Compromesso Costo/Servizio)
+In produzione, i dati dei clienti sono vitali. Ecco dove paghiamo (risparmiando rispetto ai giganti cloud) e dove facciamo self-hosting:
+1. **Compute**: **DigitalOcean Kubernetes (DOKS)** o **Linode LKE** (~€60/mese per 3 nodi). *Perché?* Ti toglie l'incubo di gestire il control plane K8s a mano, bilancia il carico in automatico, ma costa 1/3 di AWS EKS.
+2. **Database**: **Managed PostgreSQL** (es. DigitalOcean o Neon.tech a ~€30-50/mese). *Perché?* Include backup automatici, Point-In-Time-Recovery e Alta Affidabilità. Non vuoi fare il DBA di notte se cade il server.
+3. **Event Bus & Storage (Self-Hosted)**: **Redpanda e MinIO** caricati come StatefulSet sui worker K8s. *Perché?* Confluent Cloud e AWS S3 costano centinaia di euro su grandi scale. Queste tecnologie open source girano benissimo nei nostri cluster.
+4. **Intelligenza Artificiale (Tiered)**: LiteLLM smista. Operazioni complesse (analisi CV) vanno a **GPT-4o/Claude 3.5**. Operazioni ripetitive (parsing chat, UI layout) vanno a **DeepSeek-V3** per tagliare i costi del 90%.
 
 ---
 
-### 📊 Modello Finanziario (Scenario: 1.000 Utenti Attivi Mensili)
+### 📊 Modello Finanziario di PRODUZIONE (Scenario: 1.000 Utenti Attivi Mensili)
 
-#### 📉 Spese Operative (OPEX)
-*Approccio Bare Metal / VPS (es. Hetzner)*
+#### 📉 Spese Operative (OPEX) in Produzione
 
 | Voce di Costo | Dettaglio tecnico | Costo/Mese |
 |---------------|-------------------|------------|
-| **Infrastruttura** | 3 x VPS (4 CPU, 8GB RAM, 80GB NVMe) in cluster K3s | ~€ 25,00 |
-| **Storage Rete** | 100GB Block Storage per Database e MinIO | ~€ 5,00 |
-| **Dominio & DNS** | Cloudflare (Free) + rinnovo dominio annuo | ~€ 2,00 |
-| **LLM Inference** | Stimando 10M token in/out su DeepSeek/Gemini Pro | ~€ 5,00 |
+| **Compute K8s** | DigitalOcean DOKS (3 nodi, 4GB RAM) + Load Balancer | ~€ 80,00 |
+| **Database managed** | Cluster PostgreSQL gestito con backup giornaliero | ~€ 30,00 |
+| **Dominio & DNS** | Cloudflare (Free) + rinnovo dominio | ~€ 2,00 |
+| **LLM Inference** | Mix di DeepSeek (90%) e Claude (10%) | ~€ 15,00 |
 | **Transactional** | Commissioni Stripe (~2.9% + €0.25 a transazione) | *Variabile* |
-| **Totale Spese Fisse** | Per servire stabilmente fino a 1K/2K utenti | **~€ 37,00** |
+| **Totale Spese Fisse** | Infrastruttura rock-solid per servire 1K utenti | **~€ 127,00** |
 
 #### 📈 Ricavi (Revenue)
 *Tasso di conversione conservativo del 5% su 1.000 utenti gratuiti.*
@@ -1056,14 +1061,14 @@ Il progetto è architettato per abbattere i costi usando tecnologie **100% Open 
 
 ```text
   Ricavi Netti (dopo le fee bancarie):   € 666,02
-- Spese Infrastruttura & Cloud:          €  37,00
+- Spese Prod Infrastruttura & Cloud:     € 127,00
 -------------------------------------------------
-= Utile Operativo (EBITDA):              € 629,02 al mese
+= Utile Operativo (EBITDA):              € 539,02 al mese
 ```
-*Margine di profitto netto: **94.4%*** 🚀
+*Margine di profitto netto: **81%*** 🚀
 
 **Con 10.000 utenti attivi (500 paganti):**
-I costi di server salirebbero a circa €150/mese (aggiungendo nodi al cluster K8s), ma i ricavi netti volerebbero a **€ 6.660/mese**. Profitto: **~€ 6.500/mese**. La matematica dell'Open Source Cloud-Native è imbattibile.
+Scalare DOKS aggiungendo nodi e database più grandi porterà il costo a circa **€300/mese**, ma i ricavi netti saranno di **€6.660/mese**. Profitto: **~€ 6.300/mese**. Questo è il compromesso perfetto tra notti tranquille (database e K8s gestiti) e margini da SaaS puro!
 
 
 ---
