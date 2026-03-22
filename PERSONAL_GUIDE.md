@@ -1021,13 +1021,14 @@ Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**
 
 ### ⚖️ Tabella Comparativa: Dev vs Produzione
 
-| Componente | 🛠️ Sviluppo (Costo Zero) | 🚀 Produzione (Miglior Compromesso Costo/SLA) | Perché questa scelta in Prod? |
+| Componente | 🛠️ Sviluppo (Costo Zero) | 🚀 Produzione (Costo/SLA: Full-Stack HA) | Perché questa scelta in Prod? |
 |-------------|-------------------------|---------------------------------------------|-------------------------------|
-| **Compute / K8s** | K3s / Minikube in locale (o VPS nuda da €5) | **DigitalOcean DOKS** o **Linode LKE** (~€60/mese) | Non vuoi gestire il control plane K8s a mano. DOKS automatizza, ma costa 1/3 di AWS EKS. |
-| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Self-Hosted 3-Node HA Cluster** (Primary, Standby, Disaster) | **Costo Zero Gestione**. Essendo tu un DBA, gestirai tu stesso un cluster HA a 3 nodi (1 primario, 1 standby sincrono, 1 DR asincrono) per la massima resilienza bancaria. |
-| **Event Bus (Redpanda)**| Container locale | **Self-Hosted Redpanda** (su nodi worker DOKS) | Mantiene le latenze al minimo e fa risparmiare centinaia di euro rispetto a Confluent Cloud. |
-| **Storage (Object)** | MinIO locale | **Self-Hosted MinIO** (su nodi worker DOKS) | AWS S3 scala nei costi brutalmente. MinIO "S3-compatibile" su K8s è gratis e velocissimo. |
-| **Intelligenza Artificiale** | Modelli Open Source Locali (Llama-3) o Tier Gratuiti | **Router Ibrido (LiteLLM)**: GPT-4o (complessi) / DeepSeek (10x più economico per task semplici) | **Alto Valore**. Massimizza la qualità dell'app senza dissanguare le finanze per chiamate ripetitive. |
+| **Compute (Microservizi)** | K3s Locale (1 replica per pod) | **K8s Gestito 3-Nodi (DOKS)** con *HPA* | Autoscaling orizzontale dei pod tra 3 nodi fisici. Se cade un nodo, i pod si riavviano sugli altri. |
+| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Self-Hosted 3-Node HA Cluster** | **Costo Zero Gestione**. Essendo tu un DBA, gestirai tu stesso un cluster HA a 3 nodi (1 primario, 1 standby sincrono, 1 DR asincrono) per la massima resilienza bancaria. |
+| **Event Bus (Redpanda)**| Container locale (1 broker) | **Cluster 3-Broker (Raft Consensus)** | Redpanda distribuito gestisce nativamente la tolleranza ai guasti in caso di server down. |
+| **Storage (Object)** | MinIO locale | **Distributed MinIO (Erasure Coding)** | Setup MinIO multi-nodo con "Erasure Coding", permette la perdita di dischi fisici senza mai perdere un byte. |
+| **Intelligenza Artificiale** | Modelli Open Source Locali (Llama-3) | **Router Ibrido HA (LiteLLM)** | LiteLLM bilancia dinamicamente e fa *failover*. Se Claude 3.5 cade, passa a GPT-4o automaticamente, mai downtime. |
+| **Ingress/Rete** | Porta localhost esposta | **Multi-Replica Ingress + Load Balancer** | Il traffico arriva a un Load Balancer esterno, che lo splitta su molteplici repliche Nginx/Traefik Ingress. |
 
 ---
 
