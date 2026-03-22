@@ -1,12 +1,14 @@
-# 📖 SkillForge — La Tua Guida Personale (Zero → Produzione)
+# 📖 SkillForge — The Complete Guide (Zero → Produzione)
 
-> Questa guida è scritta **solo per te, Mohamed**. Spiega tutto il progetto da zero,
-> come costruire ogni pezzo a mano, e cosa imparerai ad ogni passo.
-> Il progetto ha **12 microservizi**, **22 tabelle**, **25 tipi di evento**.
+> Benvenuti nella mia guida passo-passo per costruire **SkillForge** da zero.
+> Ho scritto questo documento per documentare l'intera architettura e il processo di sviluppo,
+> utile sia per me come riferimento futuro, sia per chiunque voglia contribuire al progetto.
+> Il sistema è composto da **12 microservizi**, **22 tabelle PostgreSQL** e **25 tipi di evento** su Redpanda.
 
 ---
 
 ## 🧠 Cos'è SkillForge in 30 Secondi
+
 
 Un'app dove:
 1. L'utente si registra, paga (Free/Pro/Enterprise) e carica il CV
