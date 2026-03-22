@@ -176,6 +176,43 @@
 
 ---
 
+## 🧪 Priority 7: Next-Gen Features (from Brainstorm)
+
+### 7.1 Gamified Skill Tree ("Hidden Competency Graph")
+- [ ] Build interactive skill tree visualization (video game-style tech tree)
+- [ ] Initially show only the user's current domain branches
+- [ ] Unlock hidden branches as user answers "stealth questions" successfully
+- [ ] Each node = a skill with progress bar and confidence score
+- [ ] Animate new branch unlocks (dopamine-driven engagement)
+- [ ] Show career paths unlocked by reaching skill milestones
+
+### 7.2 Market-Driven Nudging (Job Market Intelligence)
+- [ ] Nightly scraper for job postings (LinkedIn/Indeed/Glassdoor APIs)
+- [ ] Extract in-demand skills from job descriptions (LLM extraction)
+- [ ] Cross-reference user's competency vector with market demand
+- [ ] If user has aptitude for high-demand role → inject stealth questions in that domain
+- [ ] "Career Opportunity" dashboard: show matching jobs + skill gaps
+- [ ] Alert user: "Cloud Architect roles pay 30% more and you're 70% there"
+
+### 7.3 Voice Challenges (Interview Simulator)
+- [ ] Weekly "Voice Challenge" — user explains a concept via audio
+- [ ] Speech-to-text (Whisper API or browser Web Speech API)
+- [ ] AI analysis of: clarity, confidence, technical accuracy, structure
+- [ ] Soft skill scoring (leadership, communication, presentation)
+- [ ] Mock interview mode with AI interviewer (multi-turn voice conversation)
+- [ ] Generate feedback report with improvement suggestions
+
+### 7.4 AI Chat & User Intelligence (Passive Profiling)
+- [x] Chat service (WebSocket real-time AI conversation) — scaffolded
+- [x] User Intelligence Worker (analyze chat to extract skills) — scaffolded
+- [ ] Implement conversation analysis pipeline (batch 5-10 messages → LLM extraction)
+- [ ] Build communication profile (vocabulary level, technical density, confidence)
+- [ ] Cross-service intelligence (merge chat + quiz + CV + behavior signals)
+- [ ] Implement weighted moving average for competency vector updates
+- [ ] Add opt-in consent for conversation analysis (GDPR)
+
+---
+
 ## 📋 Technical Debt Tracker
 
 | Item | Priority | Status |

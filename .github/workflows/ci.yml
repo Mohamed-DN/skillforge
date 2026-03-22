@@ -16,8 +16,10 @@ jobs:
           - services/api-gateway
           - services/auth-service
           - services/billing-service
+          - services/chat-service
           - services/llm-gateway
           - services/ai-worker
+          - services/user-intelligence-worker
           - services/assessment-engine
           - services/user-profile-service
           - services/cv-analyzer
@@ -126,9 +128,13 @@ jobs:
             containerfile: Containerfile.python-service
           - service: billing-service
             containerfile: Containerfile.python-service
+          - service: chat-service
+            containerfile: Containerfile.python-service
           - service: llm-gateway
             containerfile: Containerfile.python-service
           - service: ai-worker
+            containerfile: Containerfile.python-worker
+          - service: user-intelligence-worker
             containerfile: Containerfile.python-worker
           - service: assessment-engine
             containerfile: Containerfile.python-service

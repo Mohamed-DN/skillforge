@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package megaproject.events;
+package skillforge.events;
 
 import "google/protobuf/timestamp.proto";
 
@@ -80,8 +80,63 @@ message CVAnalyzed {
 }
 
 // ============================================================
-// AI Processing Events
+// Chat Events
 // ============================================================
+
+message ChatMessageSent {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string session_id = 3;
+  string content = 4;
+  int32 token_count = 5;
+  string topic = 6;             // general, technical, career
+}
+
+message ChatResponseGenerated {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string session_id = 3;
+  string model_used = 4;
+  int32 token_count = 5;
+  int32 response_time_ms = 6;
+}
+
+message ChatSessionStarted {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string session_id = 3;
+  string topic = 4;
+}
+
+message ChatSessionEnded {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string session_id = 3;
+  int32 total_messages = 4;
+  int32 duration_seconds = 5;
+}
+
+// ============================================================
+// User Intelligence Events
+// ============================================================
+
+message UserProfileEnriched {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string insight_type = 3;      // skill_detected, gap_detected, interest, style
+  string category = 4;
+  float confidence = 5;
+  string source = 6;            // chat, quiz, cv, behavior
+}
+
+message SkillGapDetected {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string skill_name = 3;
+  string current_level = 4;
+  string market_demand = 5;     // low, medium, high
+  string suggested_action = 6;
+}
 
 message CompetencyVectorUpdated {
   EventMetadata metadata = 1;
@@ -97,5 +152,34 @@ message LearningPathGenerated {
   string user_id = 2;
   string path_id = 3;
   int32 path_version = 4;
-  string generated_by_model = 5;    // which LLM generated it
+  string generated_by_model = 5;
 }
+
+// ============================================================
+// Subscription Events
+// ============================================================
+
+message SubscriptionCreated {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string subscription_id = 3;
+  string tier = 4;              // free, pro, enterprise
+  string billing_cycle = 5;     // monthly, annual
+}
+
+message PaymentSucceeded {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string invoice_id = 3;
+  int32 amount_cents = 4;
+  string currency = 5;
+}
+
+message PaymentFailed {
+  EventMetadata metadata = 1;
+  string user_id = 2;
+  string invoice_id = 3;
+  string failure_reason = 4;
+  int32 retry_count = 5;
+}
+
