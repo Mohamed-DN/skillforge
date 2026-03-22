@@ -1024,7 +1024,7 @@ Il progetto è architettato per avere **Costo Zero in fase di sviluppo/staging**
 | Componente | 🛠️ Sviluppo (Costo Zero) | 🚀 Produzione (Miglior Compromesso Costo/SLA) | Perché questa scelta in Prod? |
 |-------------|-------------------------|---------------------------------------------|-------------------------------|
 | **Compute / K8s** | K3s / Minikube in locale (o VPS nuda da €5) | **DigitalOcean DOKS** o **Linode LKE** (~€60/mese) | Non vuoi gestire il control plane K8s a mano. DOKS automatizza, ma costa 1/3 di AWS EKS. |
-| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Self-Hosted PostgreSQL (Dedicated Node/StatefulSet)** | **Costo Zero**. Essendo tu un DBA, pagare servizi gestiti non aggiunge valore reale. Lo gestirai in autonomia. |
+| **Database (PostgreSQL)** | Container locale in Docker/Podman | **Self-Hosted 3-Node HA Cluster** (Primary, Standby, Disaster) | **Costo Zero Gestione**. Essendo tu un DBA, gestirai tu stesso un cluster HA a 3 nodi (1 primario, 1 standby sincrono, 1 DR asincrono) per la massima resilienza bancaria. |
 | **Event Bus (Redpanda)**| Container locale | **Self-Hosted Redpanda** (su nodi worker DOKS) | Mantiene le latenze al minimo e fa risparmiare centinaia di euro rispetto a Confluent Cloud. |
 | **Storage (Object)** | MinIO locale | **Self-Hosted MinIO** (su nodi worker DOKS) | AWS S3 scala nei costi brutalmente. MinIO "S3-compatibile" su K8s è gratis e velocissimo. |
 | **Intelligenza Artificiale** | Modelli Open Source Locali (Llama-3) o Tier Gratuiti | **Router Ibrido (LiteLLM)**: GPT-4o (complessi) / DeepSeek (10x più economico per task semplici) | **Alto Valore**. Massimizza la qualità dell'app senza dissanguare le finanze per chiamate ripetitive. |
