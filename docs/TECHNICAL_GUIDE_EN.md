@@ -65,15 +65,23 @@ Deploy the `cv-analyzer`. When a user uploads a CV (stored in MinIO), the API ga
 2. **mTLS**: Implement a service mesh (like Linkerd or Istio) to encrypt all pod-to-pod traffic.
 3. **Secrets**: Move all credentials out of `.env` files and into HashiCorp Vault or Kubernetes external secrets.
 
-### Step 11: Production Deployment (Full-Stack HA)
+### Step 11: Production Deployment (Full-Stack HA & Autoscaling)
 To transition from development to production:
-1. **Compute**: Deploy microservices using `Deployment` manifests with `HorizontalPodAutoscaler` targeting 80% CPU utilization.
+1. **Compute (Two-Level Autoscaling)**: 
+   - Deploy microservices using `HorizontalPodAutoscaler` targeting 80% CPU.
+   - Enable **Cluster Autoscaler** (or Karpenter) so the cloud provider dynamically adds/removes physical nodes based on aggregate pod demand.
 2. **Postgres HA**: Apply the CloudNativePG `cluster.yaml` with `instances: 3`.
-3. **Redpanda HA**: Deploy via Helm chart enforcing `replicas: 3` and pod anti-affinity (ensuring brokers land on different physical nodes).
+3. **Redpanda HA**: Deploy via Helm chart enforcing `replicas: 3` and pod anti-affinity.
 4. **MinIO HA**: Deploy the MinIO Operator with erasure coding enabled across the physical node volumes.
 
-## Part 3: Financial Projections (Scaling to 1M Users)
+## Part 3: Financial Projections & API Safeguards
 
+### API Margin Safeguards (Zero-Loss Guarantee)
+To prevent a $9.99/mo user from consuming $50 in LLM tokens:
+1. **Model Fallbacks**: LiteLLM routes ~90% of passive background tasks to extremely cheap models (e.g., DeepSeek-V3).
+2. **Hard Budgets**: The DB maintains an `api_token_budget_month` column for each user. LiteLLM strictly enforces this budget. Once a user hits their allocated API cost (e.g., $2.00 API cost limit on a $9.99 subscription), AI features gracefully degrade or prompt an upgrade. Users **cannot** mathematically cause an operational loss.
+
+### Scaling to 1M Users
 Operating an EdTech platform with Full-Stack HA infrastructure yields massive margins at scale by minimizing managed-cloud overhead.
 
 | User Target | Infrastructure Setup | Approx. Monthly OPEX | Paying Users (5%) | Net Revenue | **Net Profit (EBITDA)** |

@@ -1018,13 +1018,10 @@ trivy image skillforge/api-gateway:latest
 
 Essere un DBA non basta più: oggi l'infrastruttura è "Code". Ecco **esattamente come** implementerai l'Alta Affidabilità (HA) su Kubernetes quando passeremo dal laptop al Cloud:
 
-### 1. K8s Compute (HPA - Horizontal Pod Autoscaling)
-Per ogni microservizio (es. `auth-service`), non crei un singolo Pod, ma un `Deployment` configurato per scalare in base alla CPU/RAM.
-```bash
-# Esempio: Crea l'autoscaler per il servizio di Auth.
-# Scala da 3 a 10 repliche se l'uso medio della CPU supera l'80%
-kubectl autoscale deployment auth-service --cpu-percent=80 --min=3 --max=10
-```
+### 1. K8s Compute (HPA & Cluster Autoscaler)
+L'autoscaling avviene su "Due Livelli" per farti risparmiare e non farti mai andare down:
+- **HPA (Pod Autoscaler)**: Crea nuovi pod del servizio se la CPU supera l'80% `kubectl autoscale deployment auth-service ...`.
+- **Cluster Autoscaler**: Se i 3 nodi fisici finiscono la RAM e non c'è spazio per i nuovi pod, K8s *ordina in automatico* un server aggiuntivo al cloud provider (es. DigitalOcean), lo aggiunge al cluster in 2 minuti e sposta i pod. Quando il traffico notturno cala, **distrugge i server extra** per farti risparmiare soldi!
 
 ### 2. Database HA (PostgreSQL) — La Via del DBA Cloud-Native
 Non farai scrip bash manuali per la replica. Userai l'operatore **CloudNativePG** (creato da EnterpriseDB), lo standard assoluto per PostgreSQL su K8s.
@@ -1078,10 +1075,17 @@ Perché paghiamo per 3 Nodi K8s invece che uno singolo gigante?
 
 ---
 
-### 📈 Modello Finanziario Scalato: Da 100 a 1.000.000 di Utenti
+### 🛡️ Salvaguardia del Margine (Zero Perdite sulle API)
+
+Come impediamo a un utente pagante (€ 9.99/mese) di "spammare" la Chat AI e costarci € 50 in token API di Claude o OpenAI mandandoti in perdita?
+
+1. **Il Router AI (LiteLLM)**: Instrada l'80/90% delle query "silenziose" ai modelli più economici (DeepSeek `0.14$/1M` token). Un utente non potrà mai fare 70 milioni di token in un mese prima di essere flaggato. 
+2. **Token Budgets & Rate Limiting**: Nel database (tabella `users`) c'è una colonna `api_token_budget_month`. LiteLLM monitora le chiamate di ogni utente e taglia la spina se superano la soglia del *Max Cost* impostata (es. max 2€ di spesa API al mese per l'utente da 9.99€). L'utente non ti manderà **MAI** in perdita matematica.
+
+### 📈 Modello Finanziario Scalato (Cluster Autoscaling Attivo)
 
 *Ipotesi di conversione fissa: **4% piano Pro (€9.99), 1% piano Enterprise (€29.99) = 5% utenti paganti totali**.*
-*I costi OPEX includono: Cluster 3-Nodi (DOKS/Linode), Load Balancer, Token LLM (Mix DeepSeek 90% / Claude 10%), Dominio, Storage.*
+*I costi OPEX includono: Cluster base 3-Nodi (Auto-scalato all'occorrenza), Load Balancer, Token LLM (Mix DeepSeek 90% / Claude 10%), Dominio, Storage.*
 
 | Target Utenti | Dettaglio Infrastruttura HA (Self-Hosted DB/Redpanda) | OPEX Mensile (Server+AI) | Utenti Paganti | Ricavi Netti (dopo Stripe 3%) | 👉 **EBITDA (Profitto Netto)** |
 |---------------|-------------------------------------------------------|--------------------------|----------------|-------------------------------|----------------------------------|
