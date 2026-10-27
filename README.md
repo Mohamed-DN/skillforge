@@ -1,4 +1,4 @@
-<h1 align="center">UNDER DEVELOP</h1>
+<p align="center"><strong>Architecture and learning project in development</strong></p>
 
 <h1 align="center">⚒️ SkillForge</h1>
 
@@ -15,34 +15,38 @@
   <img src="https://img.shields.io/badge/AI-LLM%20Gateway-purple" alt="AI"/>
   <img src="https://img.shields.io/badge/DB-PostgreSQL%20Hybrid-336791?logo=postgresql&logoColor=white" alt="Database"/>
   <img src="https://img.shields.io/badge/events-Redpanda-E2231A" alt="Events"/>
-  <img src="https://img.shields.io/badge/security-bank--level-darkgreen" alt="Security"/>
+  <img src="https://img.shields.io/badge/security-design%20targets-blue" alt="Security targets"/>
 </p>
 
 ---
 
 ## 🎯 What Is SkillForge?
 
-**SkillForge** is a production-grade, data-intensive platform that personalizes tech career acceleration using AI. It analyzes a user's skills via adaptive assessments and CV analysis, then builds a dynamic, personalized learning path — evolving in real time as the user grows.
+**Current state:** the repository contains architecture, schemas, infrastructure scaffolding and service skeletons. [ROADMAP.md](ROADMAP.md) marks the service implementations, hardening and deployment phases as open. The diagrams and capability lists below describe the intended system; they are not evidence of a running platform, financial-grade security, GDPR compliance or measured availability.
 
-The system is **not** a simple CRUD app. It is an **engineering showcase** implementing the deepest patterns from Martin Kleppmann's *"Designing Data-Intensive Applications"* (2nd Edition), including:
+**Read in this order:** [personal learning guide](PERSONAL_GUIDE.md) → [roadmap](ROADMAP.md) → [technical guide](docs/TECHNICAL_GUIDE_EN.md).
 
-- ✅ **Event Sourcing** — every state change is an immutable event
-- ✅ **Stream Processing** (Kappa Architecture) — single real-time pipeline, no batch jobs
-- ✅ **CQRS** — separate read/write models for optimal performance
-- ✅ **Schema Evolution** — Protobuf/Avro schemas with versioning
-- ✅ **Derived Data & Materialized Views** — competency vectors computed from event streams
-- ✅ **Exactly-once Semantics** — idempotent consumers + transactional outbox
-- ✅ **Tunable Consistency** — strong for auth/billing, eventual for analytics
-- ✅ **Bank-Level Security** — rootless Podman, mTLS, encryption at rest + transit, GDPR
-- ✅ **Fault Tolerance** — circuit breakers, dead-letter queues, exponential backoff
+**SkillForge** is a design for a data-intensive learning platform that personalizes tech career acceleration using AI. It analyzes a user's skills via adaptive assessments and CV analysis, then builds a dynamic, personalized learning path — evolving in real time as the user grows.
+
+The project is a learning exercise whose architecture explores patterns from Martin Kleppmann's *"Designing Data-Intensive Applications"* (2nd Edition), including:
+
+- **Target:** **Event Sourcing** — every state change is an immutable event
+- **Target:** **Stream Processing** (Kappa Architecture) — single real-time pipeline, no batch jobs
+- **Target:** **CQRS** — separate read/write models for optimal performance
+- **Target:** **Schema Evolution** — Protobuf/Avro schemas with versioning
+- **Target:** **Derived Data & Materialized Views** — competency vectors computed from event streams
+- **Target:** **Exactly-once Semantics** — idempotent consumers + transactional outbox
+- **Target:** **Tunable Consistency** — strong for auth/billing, eventual for analytics
+- **Target:** **Bank-Level Security** — rootless Podman, mTLS, encryption at rest + transit, GDPR
+- **Target:** **Fault Tolerance** — circuit breakers, dead-letter queues, exponential backoff
 
 ---
 
-## 🔐 Security Architecture (Bank-Level)
+## 🔐 Security Architecture Targets
 
-SkillForge is designed to meet **financial-grade security requirements**:
+The following controls are design targets. Implementation and independent verification remain on the roadmap:
 
-| Layer | Implementation |
+| Layer | Planned control |
 |-------|----------------|
 | **Container Runtime** | Podman (rootless, daemonless, no root daemon attack surface) |
 | **Encryption in Transit** | TLS 1.3 everywhere, mTLS between services (cert-manager) |
@@ -185,7 +189,7 @@ sequenceDiagram
 
 ---
 
-## 💰 Business Model & Subscription Tiers
+## 💰 Proposed Business Model & Subscription Tiers
 
 | Tier | Price | Features |
 |------|-------|----------|
@@ -193,24 +197,24 @@ sequenceDiagram
 | **Pro** | €9.99/month or €99/year | Unlimited quizzes, full learning path, CV analysis, progress analytics |
 | **Enterprise** | €29.99/month or €299/year | Everything in Pro + team management, priority AI, custom learning paths |
 
-Revenue model ensures system costs are covered by subscriptions. LLM costs are optimized by the Gateway routing cheap tasks to DeepSeek.
+These tiers are planning assumptions, not an active offer. Operating costs, provider pricing and the routing policy still need validation.
 
 ---
 
-## 🛠️ Tech Stack (100% Open-Source Where Possible)
+## 🛠️ Proposed Technology Stack
 
 | Layer | Technology | License | Why |
 |-------|-----------|---------|-----|
 | **Containers** | Podman | Apache 2.0 | Rootless, daemonless, K8s-native, FREE |
 | **API** | FastAPI (Python) | MIT | Async, high-performance, OpenAPI auto-docs |
-| **Event Bus** | Redpanda | BSL → Apache 2.0 | Kafka-compatible, 10x lower latency, single binary |
+| **Event Bus** | Redpanda | BSL → Apache 2.0 | Kafka-compatible event streaming |
 | **AI Router** | LiteLLM | MIT | Unified interface to 100+ LLMs, fallback, cost tracking |
 | **Database** | PostgreSQL + pgvector + TimescaleDB | PostgreSQL + Apache 2.0 | Hybrid: relational + vector (RAG) + time-series |
 | **Cache/Sessions** | Redis (or Valkey) | BSD / BSD | Session storage, token blacklisting, caching |
 | **Object Storage** | MinIO | AGPL v3 | S3-compatible, CVs and learning materials |
 | **Orchestration** | Kubernetes | Apache 2.0 | Auto-scaling, self-healing |
 | **Autoscaler** | KEDA | Apache 2.0 | Scale-to-zero, event-driven scaling |
-| **Secrets** | HashiCorp Vault | BSL | Bank-level secrets management |
+| **Secrets** | HashiCorp Vault | BSL | Secrets-management design target |
 | **Payments** | Stripe API | — | PCI-compliant payment processing |
 | **Schema Registry** | Redpanda Schema Registry | BSL | Protobuf/Avro schema evolution |
 | **Observability** | OpenTelemetry + Prometheus + Grafana | Apache 2.0 | Tracing, metrics, dashboards |
@@ -286,9 +290,9 @@ skillforge/
 
 ---
 
-## 📚 DDIA v2 Chapters → SkillForge Implementation
+## 📚 DDIA v2 Chapters → Planned SkillForge Work
 
-| Chapter | Concept | Implementation |
+| Chapter | Concept | Planned work |
 |---------|---------|----------------|
 | Ch1 | Trade-offs | ADRs for every architectural choice |
 | Ch2 | Non-functional Requirements | SLOs: p99 < 100ms API, 99.9% uptime |
@@ -317,7 +321,9 @@ skillforge/
 - kubectl + helm (for K8s deployment)
 - At least one LLM API key (DeepSeek, OpenAI, or Google)
 
-### Local Development (Podman Compose)
+### Intended Local Development Flow (Podman Compose)
+
+The commands below document the planned flow. Service entry points and migrations must be implemented before this becomes a working end-to-end setup; consult the roadmap first.
 ```bash
 # Clone the repository
 git clone https://github.com/Mohamed-DN/skillforge.git
@@ -345,11 +351,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📜 License
 
-This project is licensed under the MIT License.
+The intended licence is MIT; a root LICENSE file is not present in this revision. Confirm the licence grant before redistribution.
 
 ---
 
 <p align="center">
-  <em>Built with ⚒️ as a learning journey — from zero to production-grade, bank-level data-intensive system.</em><br/>
-  <em>Every line of code implements a concept from "Designing Data-Intensive Applications" v2.</em>
+  <em>A learning journey through data-intensive system design, with implementation tracked in the roadmap.</em>
 </p>
+
